@@ -1,0 +1,32 @@
+//get neighbour points 
+int neighbs[] = nearpoints(geoself(),@P,0.5,25);
+
+//initialize incVal
+float incVal = 0.0;
+
+
+//loop through array
+foreach(int n ; neighbs){
+    //printf("%d ",n);
+    incVal += point(geoself(),"temp",n);   
+}
+// get average value
+incVal /= len(neighbs);
+
+
+// get point temperature
+@temp = point(geoself(),"temp",@ptnum);   
+//calculate difference
+float diff = incVal - @temp;
+
+
+/* 
+actual diffusion : add the difference value ( mult by a factor ) 
+to starting temperature 
+*/
+@temp += diff * 0.2;
+
+
+
+
+
