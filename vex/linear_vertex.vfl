@@ -1,0 +1,4 @@
+
+int vtx = vertexprimindex(geoself(),@ptnum);
+int count = primvertexcount(geoself(),@primnum);
+float pct = vtx / float(count-1);
