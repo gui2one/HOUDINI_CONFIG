@@ -1,0 +1,6 @@
+float angle = 30.0;
+
+vector axis = set(1,0,0);
+vector4 quat = quaternion(radians(angle),axis) ;
+
+@N = qrotate(quat,@N);
