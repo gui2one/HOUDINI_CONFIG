@@ -1,0 +1,8 @@
+matrix mat = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
+
+vector axis = set(1,0,0);
+float angle = radians(90);
+rotate(mat,angle,axis);
+vector rNormal = vtransform(@N,mat);
+
+@N = rNormal;
