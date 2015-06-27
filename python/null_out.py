@@ -27,3 +27,7 @@ for conn in sel.outputConnections():
 nullNode.insertInput(0,sel)    
 
 nullNode.moveToGoodPosition()
+
+nullNode.setDisplayFlag(1)
+nullNode.setRenderFlag(1)
+nullNode.setTemplateFlag(1)
