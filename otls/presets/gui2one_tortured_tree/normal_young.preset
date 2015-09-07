@@ -1,0 +1,21 @@
+#PSI_PRESET
+version 2.0a
+opvalues
+{
+version 0.8
+generations	[ 0	locks=0 ]	(	6	)
+final_branches_generations	[ 0	locks=0 ]	(	2	)
+final_branches_type	[ 0	locks=0 ]	(	"0"	)
+leaf_shape	[ 0	locks=0 ]	(	"0"	)
+leaves_scale	[ 0	locks=0 ]	(	0.746	)
+show_leaves	[ 0	locks=0 ]	(	"on"	)
+show_final_branches	[ 0	locks=0 ]	(	"on"	)
+seed_trunk	[ 0	locks=0 ]	(	3	)
+trunk_rand_scale	[ 0	locks=0 ]	(	50	)
+seed_top_part	[ 0	locks=0 ]	(	1	)
+subd_iterations	[ 0	locks=0 ]	(	1	)
+gravity_main	[ 0	locks=0 ]	(	-14	)
+gravity_final_branches	[ 0	locks=0 ]	(	-7	)
+final_branches_iterations	[ 0	locks=0 ]	(	4	)
+
+}
