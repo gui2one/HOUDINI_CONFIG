@@ -1,0 +1,229 @@
+#PSI_PRESET
+version 2.0a
+opchannels
+{
+    channel uniformvelx {
+      lefttype = extend
+      righttype = extend
+      flags = 0
+      segment { length = 0 expr = "((snoise(($FF*0.03)+2222,0,0)+1)/2) * 0.5" }
+    }
+    channel objframe {
+      lefttype = extend
+      righttype = extend
+      flags = 0
+      segment { length = 0 expr = $FF-0.5 }
+    }
+    channel f1 {
+      lefttype = extend
+      righttype = extend
+      flags = 0
+      segment { length = 0 expr = $FSTART }
+    }
+    channel f2 {
+      lefttype = extend
+      righttype = extend
+      flags = 0
+      segment { length = 0 expr = $FEND }
+    }
+    channel f41 {
+      lefttype = extend
+      righttype = extend
+      flags = 0
+      segment { length = 0 expr = $FSTART }
+    }
+    channel f42 {
+      lefttype = extend
+      righttype = extend
+      flags = 0
+      segment { length = 0 expr = $FEND }
+    }
+  }
+opvalues
+{
+version 0.8
+stdswitcher	[ 0	locks=0 ]	(	0	0	)
+keeppos	[ 0	locks=0 ]	(	"off"	)
+pre_xform	[ 0	locks=0 ]	(	0	)
+xOrd	[ 0	locks=0 ]	(	"srt"	)
+rOrd	[ 0	locks=0 ]	(	"xyz"	)
+t	[ 0	locks=0 ]	(	0	0	0	)
+r	[ 0	locks=0 ]	(	0	0	0	)
+s	[ 0	locks=0 ]	(	1	1	1	)
+p	[ 0	locks=0 ]	(	0	0	0	)
+scale	[ 0	locks=0 ]	(	1	)
+lookatpath	[ 0	locks=0 ]	(	""	)
+lookup	[ 0	locks=0 ]	(	on	)
+pathobjpath	[ 0	locks=0 ]	(	""	)
+roll	[ 0	locks=0 ]	(	0	)
+pos	[ 0	locks=0 ]	(	0	)
+uparmtype	[ 0	locks=0 ]	(	"arc"	)
+pathorient	[ 0	locks=0 ]	(	1	)
+up	[ 0	locks=0 ]	(	0	1	0	)
+bank	[ 0	locks=0 ]	(	0	)
+label1	[ 0	locks=0 ]	(	"Sub-Network Input #1"	)
+label2	[ 0	locks=0 ]	(	"Sub-Network Input #2"	)
+label3	[ 0	locks=0 ]	(	"Sub-Network Input #3"	)
+label4	[ 0	locks=0 ]	(	"Sub-Network Input #4"	)
+tdisplay	[ 0	locks=0 ]	(	"off"	)
+display	[ 0	locks=0 ]	(	1	)
+outputobj	[ 0	locks=0 ]	(	_input1_obj_	)
+visibleobjects	[ 0	locks=0 ]	(	*	)
+picking	[ 0	locks=0 ]	(	"on"	)
+pickscript	[ 0	locks=0 ]	(	""	)
+caching	[ 0	locks=0 ]	(	"off"	)
+use_dcolor	[ 0	locks=0 ]	(	"on"	)
+dcolor	[ 0	locks=0 ]	(	1	1	1	)
+stdswitcher3	[ 0	locks=0 ]	(	0	0	)
+save_preset	[ 0	locks=0 ]	(	0	)
+presets	[ 0	locks=0 ]	(	"0"	)
+display_override	[ 0	locks=0 ]	(	"0"	)
+stdswitcher3_2	[ 0	locks=0 ]	(	0	0	0	0	)
+generations	[ 0	locks=0 ]	(	5	)
+sepparm4	[ 0	locks=0 ]	(	)
+final_branches_generations	[ 0	locks=0 ]	(	2	)
+final_branches_type	[ 0	locks=0 ]	(	"0"	)
+sepparm3	[ 0	locks=0 ]	(	)
+leaf_shape	[ 0	locks=0 ]	(	"0"	)
+leaves_scale	[ 0	locks=0 ]	(	1.2	)
+show_leaves	[ 0	locks=0 ]	(	"on"	)
+show_final_branches	[ 0	locks=0 ]	(	"on"	)
+sepparm	[ 0	locks=0 ]	(	)
+seed_trunk	[ 0	locks=0 ]	(	4	)
+trunk_rand_scale	[ 0	locks=0 ]	(	50	)
+sepparm2	[ 0	locks=0 ]	(	)
+seed_top_part	[ 0	locks=0 ]	(	1	)
+subd_iterations	[ 0	locks=0 ]	(	0	)
+gravity_main	[ 0	locks=0 ]	(	-15.199999999999999	)
+gravity_final_branches	[ 0	locks=0 ]	(	0	)
+final_branches_iterations	[ 0	locks=0 ]	(	4	)
+leavesScale	[ 0	locks=0 ]	(	0.0041900000000000001	)
+use_sim	[ 0	locks=0 ]	(	"off"	)
+wind_params	[ 0	locks=0 ]	(	1	1	)
+visualize_wind_vel	[ 0	locks=0 ]	(	"off"	)
+add_uniform_vel	[ 0	locks=0 ]	(	"on"	)
+uniformvel	[ 0	locks=0 ]	(	[ uniformvelx	0.27880720049142838 ] 	0	0	)
+folder0_1_1	[ 0	locks=0 ]	(	0	0	0	0	0	)
+add_vortex	[ 0	locks=0 ]	(	"off"	)
+vortexpivot	[ 0	locks=0 ]	(	0	0	0	)
+vortexdir	[ 0	locks=0 ]	(	0	1	0	)
+vortexspeed	[ 0	locks=0 ]	(	1	)
+limitvortex	[ 0	locks=0 ]	(	"off"	)
+vortexradius	[ 0	locks=0 ]	(	1	)
+vortexramp	[ 0	locks=0 ]	(	3	)
+add_curl_noise	[ 0	locks=0 ]	(	"on"	)
+turbscale	[ 0	locks=0 ]	(	1	)
+turbswirl	[ 0	locks=0 ]	(	0.29999999999999999	)
+turbrough	[ 0	locks=0 ]	(	0.5	)
+turboffset	[ 0	locks=0 ]	(	1	)
+turbatten	[ 0	locks=0 ]	(	1	)
+turboctaves	[ 0	locks=0 ]	(	3	)
+turbtimedep	[ 0	locks=0 ]	(	"on"	)
+turbpulselength	[ 0	locks=0 ]	(	2.5	)
+turbframeoffset	[ 0	locks=0 ]	(	0	)
+pointapply	[ 0	locks=0 ]	(	"on"	)
+pointgroup	[ 0	locks=0 ]	(	""	)
+pointattribute	[ 0	locks=0 ]	(	v	)
+pointscale	[ 0	locks=0 ]	(	1	)
+pointextrapdist	[ 0	locks=0 ]	(	1	)
+objapply	[ 0	locks=0 ]	(	"off"	)
+objpath	[ 0	locks=0 ]	(	""	)
+objscale	[ 0	locks=0 ]	(	1	)
+objframe	[ 0	locks=0 ]	(	[ objframe	0.5 ] 	)
+objsample	[ 0	locks=0 ]	(	1	)
+maskapply	[ 0	locks=0 ]	(	"on"	)
+maskgroup	[ 0	locks=0 ]	(	""	)
+maskexpand	[ 0	locks=0 ]	(	0	)
+maskcomp	[ 0	locks=0 ]	(	gt	)
+maskcutoff	[ 0	locks=0 ]	(	0	)
+collisionhandling	[ 0	locks=0 ]	(	"localgeometric"	)
+collidevolume	[ 0	locks=0 ]	(	"off"	)
+collidewire	[ 0	locks=0 ]	(	"off"	)
+resolvemaxpasses	[ 0	locks=0 ]	(	4	)
+do_wiggle	[ 0	locks=0 ]	(	"off"	)
+wiggleMaxAngle	[ 0	locks=0 ]	(	10	)
+wiggleFreq	[ 0	locks=0 ]	(	1.9350000000000001	)
+sepparm5	[ 0	locks=0 ]	(	)
+minVel	[ 0	locks=0 ]	(	1.8	)
+maxVel	[ 0	locks=0 ]	(	6.6719999999999997	)
+wire_sim_folder	[ 0	locks=0 ]	(	0	0	)
+loadfromdisk	[ 0	locks=0 ]	(	"off"	)
+reload	[ 0	locks=0 ]	(	0	)
+filemode	[ 0	locks=0 ]	(	"none"	)
+file	[ 0	locks=0 ]	(	$HIP/geo/trash/$OS_wire_geo.$F.bgeo.sc	)
+folder1	[ 0	locks=0 ]	(	0	0	0	)
+execute	[ 0	locks=0 ]	(	0	)
+executebackground	[ 0	locks=0 ]	(	0	)
+renderdialog	[ 0	locks=0 ]	(	0	)
+trange	[ 0	locks=0 ]	(	"normal"	)
+f	[ 0	locks=0 ]	(	[ f1	1 ] 	[ f2	250 ] 	1	)
+substeps	[ 0	locks=0 ]	(	1	)
+take	[ 0	locks=0 ]	(	_current_	)
+xformtype	[ 0	locks=0 ]	(	"none"	)
+mkpath	[ 0	locks=0 ]	(	"on"	)
+initsim	[ 0	locks=0 ]	(	"off"	)
+alfprogress	[ 0	locks=0 ]	(	"off"	)
+saveretry	[ 0	locks=0 ]	(	0	)
+savebackground	[ 0	locks=0 ]	(	"on"	)
+tprerender	[ 0	locks=0 ]	(	"on"	)
+prerender	[ 0	locks=0 ]	(	""	)
+tpreframe	[ 0	locks=0 ]	(	"on"	)
+preframe	[ 0	locks=0 ]	(	""	)
+tpostframe	[ 0	locks=0 ]	(	"on"	)
+postframe	[ 0	locks=0 ]	(	""	)
+tpostrender	[ 0	locks=0 ]	(	"on"	)
+postrender	[ 0	locks=0 ]	(	""	)
+deleteattributes	[ 0	locks=0 ]	(	""	)
+deletegroups	[ 0	locks=0 ]	(	""	)
+numcasts	[ 0	locks=0 ]	(	0	)
+missingframe	[ 0	locks=0 ]	(	"error"	)
+loadtype	[ 0	locks=0 ]	(	"full"	)
+packedviewedit	[ 0	locks=0 ]	(	"unchanged"	)
+viewportlod	[ 0	locks=0 ]	(	"box"	)
+packexpanded	[ 0	locks=0 ]	(	"off"	)
+delayload	[ 0	locks=0 ]	(	"off"	)
+loadfromdisk2	[ 0	locks=0 ]	(	"off"	)
+reload2	[ 0	locks=0 ]	(	0	)
+filemode2	[ 0	locks=0 ]	(	"none"	)
+file2	[ 0	locks=0 ]	(	$HIP/geo/trash/$OS_render_geometry.$F.bgeo.sc	)
+folder2	[ 0	locks=0 ]	(	0	0	0	)
+execute2	[ 0	locks=0 ]	(	0	)
+executebackground2	[ 0	locks=0 ]	(	0	)
+renderdialog2	[ 0	locks=0 ]	(	0	)
+trange2	[ 0	locks=0 ]	(	"normal"	)
+f4	[ 0	locks=0 ]	(	[ f41	1 ] 	[ f42	250 ] 	1	)
+substeps2	[ 0	locks=0 ]	(	1	)
+take2	[ 0	locks=0 ]	(	_current_	)
+xformtype2	[ 0	locks=0 ]	(	"none"	)
+mkpath2	[ 0	locks=0 ]	(	"on"	)
+initsim2	[ 0	locks=0 ]	(	"off"	)
+alfprogress2	[ 0	locks=0 ]	(	"off"	)
+saveretry2	[ 0	locks=0 ]	(	0	)
+savebackground2	[ 0	locks=0 ]	(	"on"	)
+tprerender2	[ 0	locks=0 ]	(	"on"	)
+prerender2	[ 0	locks=0 ]	(	""	)
+tpreframe2	[ 0	locks=0 ]	(	"on"	)
+preframe2	[ 0	locks=0 ]	(	""	)
+tpostframe2	[ 0	locks=0 ]	(	"on"	)
+postframe2	[ 0	locks=0 ]	(	""	)
+tpostrender2	[ 0	locks=0 ]	(	"on"	)
+postrender2	[ 0	locks=0 ]	(	""	)
+deleteattributes2	[ 0	locks=0 ]	(	""	)
+deletegroups2	[ 0	locks=0 ]	(	""	)
+numcasts2	[ 0	locks=0 ]	(	0	)
+missingframe2	[ 0	locks=0 ]	(	"error"	)
+loadtype2	[ 0	locks=0 ]	(	"full"	)
+packedviewedit2	[ 0	locks=0 ]	(	"unchanged"	)
+viewportlod2	[ 0	locks=0 ]	(	"box"	)
+packexpanded2	[ 0	locks=0 ]	(	"off"	)
+delayload2	[ 0	locks=0 ]	(	"off"	)
+vortexramp1pos	[ 0	locks=0 ]	(	0	)
+vortexramp1value	[ 0	locks=0 ]	(	0	)
+vortexramp1interp	[ 0	locks=0 ]	(	"catmull-rom"	)
+vortexramp2pos	[ 0	locks=0 ]	(	0.5	)
+vortexramp2value	[ 0	locks=0 ]	(	1	)
+vortexramp2interp	[ 0	locks=0 ]	(	"catmull-rom"	)
+vortexramp3pos	[ 0	locks=0 ]	(	1	)
+vortexramp3value	[ 0	locks=0 ]	(	0	)
+vortexramp3interp	[ 0	locks=0 ]	(	"catmull-rom"	)
+}
