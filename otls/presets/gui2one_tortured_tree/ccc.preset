@@ -4,8 +4,6 @@ opvalues
 {
 version 0.8
 user_presets_label	[ 0	locks=0 ]	(	""	)
-save_preset	[ 0	locks=0 ]	(	0	)
-load_preset	[ 0	locks=0 ]	(	0	)
 generations	[ 0	locks=0 ]	(	5	)
 final_branches_generations	[ 0	locks=0 ]	(	2	)
 final_branches_type	[ 0	locks=0 ]	(	"0"	)
