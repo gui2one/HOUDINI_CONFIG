@@ -1,0 +1,31 @@
+#PSI_PRESET
+version 2.0a
+opvalues
+{
+version 0.8
+user_presets_label	[ 0	locks=0 ]	(	""	)
+save_preset	[ 0	locks=0 ]	(	0	)
+load_preset	[ 0	locks=0 ]	(	0	)
+structure_type	[ 0	locks=0 ]	(	"1"	)
+angle_1	[ 0	locks=0 ]	(	32	)
+angle_2	[ 0	locks=0 ]	(	75	)
+seed_top_part	[ 0	locks=0 ]	(	2	)
+seed_trunk	[ 0	locks=0 ]	(	0	)
+trunk_rand_scale	[ 0	locks=0 ]	(	50	)
+generations	[ 0	locks=0 ]	(	8	)
+show_leaves	[ 0	locks=0 ]	(	"on"	)
+show_final_branches	[ 0	locks=0 ]	(	"on"	)
+sub_system_scale	[ 0	locks=0 ]	(	1	)
+final_branches_type	[ 0	locks=0 ]	(	"2"	)
+do_wheeping	[ 0	locks=0 ]	(	"off"	)
+final_branches_generations	[ 0	locks=0 ]	(	2	)
+wheeping_generations	[ 0	locks=0 ]	(	20	)
+leaf_shape	[ 0	locks=0 ]	(	"2"	)
+pruning	[ 0	locks=0 ]	(	0.57199999999999995	)
+leaves_scale	[ 0	locks=0 ]	(	1.2	)
+gravity_main	[ 0	locks=0 ]	(	-5	)
+gravity_final_branches	[ 0	locks=0 ]	(	6.5	)
+subd_iterations	[ 0	locks=0 ]	(	1	)
+leaves_color_ramp	[ 0	locks=0 ]	(	2	)
+
+}
