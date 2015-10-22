@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <tool name="SideFX::toonsimple" orbolt="True" label="Toon Simple" icon="SideFX__toonsimple-icon.png">
+    <helpText><![CDATA[Install or download the Toon Simple Orbolt digital asset.]]></helpText>
+    <helpURL>http://www.orbolt.com/asset/SideFX::toonsimple</helpURL>
+    <script scriptType="python"><![CDATA[import shelfutils
+shelfutils.installOrboltAsset(kwargs, "SideFX::toonsimple", "http://www.orbolt.com/asset/SideFX::toonsimple")]]></script>
+  </tool>
+
+  <toolshelf name="gui2one" label="gui2one">
+    <memberTool name="null_OUT"/>
+    <memberTool name="dof_null"/>
+    <memberTool name="loadCaptures"/>
+    <memberTool name="extract_planes"/>
+    <memberTool name="CHOP_clean"/>
+    <memberTool name="find reference"/>
+    <memberTool name="cop_load_captures"/>
+    <memberTool name="HtoAE"/>
+  </toolshelf>
+
+  <tool name="null_OUT" label="null_OUT" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+
+if(hou.selectedNodes().__len__() > 0):
+
+    sel = hou.selectedNodes()[0]
+    #print sel.outputs()
+else:
+    hou.ui.displayMessage("Select a node")
+    # if selection is empty exit the tool
+    sys.exit()
+    
+
+#print sel.children()   
+
+nullNode = sel.parent().createNode("null")
+nullNode.setName("OUT", True)
+nullNode.setColor(hou.Color((1.0,0.0,0.0)))
+
+
+
+for conn in sel.outputConnections():
+    index = conn.inputIndex()
+    outputNode = conn.outputNode()
+    outputNode.setInput(index,nullNode)
+    #print outputNode.name
+  
+nullNode.insertInput(0,sel)    
+
+nullNode.moveToGoodPosition()
+
+#nullNode.setDisplayFlag(1)
+#nullNode.setRenderFlag(1)
+#nullNode.setTemplateFlag(1)]]></script>
+  </tool>
+
+  <tool name="dof_null" label="dof_null" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[if hou.selectedNodes().__len__() > 0 : 
+    c = hou.selectedNodes()[0]
+    if c.type().name() == "cam" :
+        root = c.parent()
+        nullNode = root.createNode("null")
+        nullNode.setName(c.name() + "_dof_null")
+        nullNode.setPosition((c.position()[0], c.position()[1]-0.6))
+        nullNode.parm("dcolorr").set(0.9)
+        nullNode.parm("dcolorg").set(0.9)
+        nullNode.parm("dcolorb").set(0.0)
+        
+        nullNode.parm("controltype").set(4)
+        
+        #################
+        chopnet = root.createNode("chopnet")
+        chopnet.setName(c.name()+"_chopnet")
+        chopnet.setPosition((c.position()[0], c.position()[1]-1.1))
+        nullObjNode = chopnet.createNode("object")
+        nullObjNode.setName("dof_null_position")
+        nullObjNode.parm("targetpath").set(nullNode.path())
+        
+        camObjNode = chopnet.createNode("object")
+        camObjNode.setName("cam_position")
+        camObjNode.parm("targetpath").set(c.path())        
+        
+        exp = 'distance('
+        exp += 'chop("'+ camObjNode.path()+'/tx"),'
+        exp += 'chop("'+ camObjNode.path()+'/ty"),'
+        exp += 'chop("'+ camObjNode.path()+'/tz"),'        
+        exp += 'chop("'+ nullObjNode.path()+'/tx"),'
+        exp += 'chop("'+ nullObjNode.path()+'/ty"),'
+        exp += 'chop("'+ nullObjNode.path()+'/tz"))'
+        c.parm("focus").setExpression(exp)
+        #print nullNode
+    else :
+        hou.ui.displayMessage("select a camera node")        
+else :
+    hou.ui.displayMessage("select a camera")
+]]></script>
+  </tool>
+
+  <tool name="loadCaptures" label="loadCaptures" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import os
+import glob
+import collections
+import math 
+sel =  hou.selectedNodes()[0]
+root = sel.parent()
+
+
+### get bounds of selected geometry
+geoBounds = sel.geometry().boundingBox()
+
+### get data on disk
+os.chdir("F:/PYTHON_playground/misc/google_maps/captures")
+
+pngFiles =  glob.glob("*.png")
+txtFiles =  glob.glob("*.txt")
+
+
+
+dataDict = {}
+for txt in txtFiles : 
+    bboxValues = []
+    f = open(txt,"r")
+    content = f.read()
+    
+    f.close()
+    
+    data = content.split(",")
+    bounds = []
+    inc = 0
+    for item in data:
+        bounds.append(item.translate(None, '{ }').split(":")[1])
+        bounds[inc] = float(bounds[inc])
+        inc += 1
+        
+    dataDict[txt.replace(".txt","")] = bounds   
+
+
+sortedData = collections.OrderedDict(sorted(dataDict.items()))    
+#print(len(dataDict))
+chosenDict = {}
+chosenKeyArray = []
+mapInc = 0
+for item in sortedData :
+    if sortedData[item][0] > 45.0 and sortedData[item][0] < 46.0 :
+        if sortedData[item][1] > 6.0 and sortedData[item][1] < 7.0 :
+            chosenDict[item] = sortedData[item]
+            chosenKeyArray.append(item)
+            mapInc += 1
+        
+        
+print (" nombre de captures selectionnÃ©es : %d "% len(chosenDict))
+print geoBounds
+
+
+try : 
+    hou.node(root.path() + "/sattelite_shader").destroy()
+except:
+    print "nothing to destroy"
+    
+### create shopnet
+shopnet = root.createNode("shopnet")
+shopnet.setName("sattelite_shader")
+
+### create vopmaterial
+
+vopMat = shopnet.createNode("vopmaterial")
+vopMat.setName("sattelite_shader")
+
+maxVop = vopMat.createNode("max")
+
+surfGlob = hou.node(vopMat.path() + "/surface_globals")
+surfOutput = hou.node(vopMat.path() + "/surface_output")
+### create texture vops
+inc = 0
+for item in chosenDict :
+
+    centerCoords = item.split("_")
+    
+    centerCoords[0] = float(centerCoords[0])
+    centerCoords[1] = float(centerCoords[1])   
+    print (centerCoords[0] - math.floor(centerCoords[0]))
+    
+    texVop = vopMat.createNode("texture")
+    texVop.setName(item)
+    texVop.parm("map").set("F:/PYTHON_playground/misc/google_maps/captures/"+ item +".png")
+    texVop.parm("wrap").set("decal")
+    #print surfGlob.outputs()
+    
+    ### vector to float    
+    vecToFloat = vopMat.createNode("vectofloat")
+    texVop.setInput(2,vecToFloat,0)
+    texVop.setInput(3,vecToFloat,2)  
+    
+    
+    ### xform
+    xForm = vopMat.createNode("xform")
+    vecToFloat.setInput(0,xForm,0)
+    inc += 1
+    
+    ### transform
+    transform = vopMat.createNode("transform")
+    xForm.setInput(0, transform,0)
+    
+    transform.setInput(0,surfGlob,3)
+    
+    S = chosenDict[item][0]
+    E = chosenDict[item][1]
+    W = chosenDict[item][2]
+    N = chosenDict[item][3]    
+    
+    
+#    xForm.parm("trs").set(4) ### Trans Scale Rotate
+    xForm.parm("trs").set(0) ### Scale Rotate Trans  (default value)   
+    
+    xParm = 1/(E-W)
+    zParm = 1/(S-N)
+    xForm.parm("scale1").set(xParm)
+    xForm.parm("scale3").set(zParm)
+    
+    ### ya un decalage pas cool
+    
+    xForm.parm("pivot3").set(1-(centerCoords[0] - math.floor(centerCoords[0])))
+    xForm.parm("pivot1").set(centerCoords[1] - math.floor(centerCoords[1]))
+
+#    xForm.parm("trans3").set(1-(S - math.floor(S)))
+#    xForm.parm("trans1").set(E - math.floor(E))
+    
+    maxVop.setInput(inc,texVop,0)
+    
+surfOutput.setInput(0,maxVop,0)]]></script>
+  </tool>
+
+  <tool name="tool_1" label="New Tool" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+sys.path.append("F:/HOUDINI_CONFIG/python")
+
+import load_captures
+
+load_captures.main()]]></script>
+  </tool>
+
+  <tool name="extract_planes" label="extract_planes" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[s = hou.selectedNodes()[0]
+root = s.parent()
+
+def findLights():
+    lightPlanes = []
+    print "Find Lights Function ----"
+    for i in range(nPlanes):
+        plane = s.planes()[i]
+    
+        ### if it's an "light" plane
+        if plane.find("obj_") != -1:
+            lightPlanes.append(plane)
+            
+    print len(lightPlanes), "Light Planes"
+    
+    nameArray = []
+    
+    for lightPlane in lightPlanes:
+        lightName = lightPlane.split("_")[1]
+        if not lightName in nameArray:
+            nameArray.append(lightName)    
+
+    return nameArray
+            
+            
+            
+myPlanes = ()
+nPlanes = len(s.planes())
+print nPlanes
+
+
+lights = findLights()
+colors = []
+colors.append(hou.Color((255,0,0)))
+colors.append(hou.Color((0,255,0)))
+colors.append(hou.Color((0,0,255)))
+colors.append(hou.Color((255,255,0)))
+
+inc = 0
+for light in lights:
+    nodes = []
+    for plane in s.planes():
+        if plane.find(light) != -1 and plane.find("coat") == -1  and plane.find("reflect") == -1:
+            extract = root.createNode("gui2one_COP_extract_channel")
+            nodes.append(extract)
+            extract.setInput(0,s)
+            extract.setColor(colors[inc % 4])
+            extract.parm("plane_name").set(plane)
+            extract.setName(light +"__"+ plane.split("_")[2] + "__" +plane.split("_")[3])
+            
+    inc += 1
+    
+    
+    for i in range(len(nodes)-1):
+        addNode = root.createNode("add")
+        
+        if i == 0:
+            addNode.setInput(0,nodes[i])
+            addNode.setInput(1,nodes[i+1])
+            oldAdd = addNode
+        else:
+            addNode.setInput(0, oldAdd    )
+            addNode.setInput(1,nodes[i+1])
+            oldAdd = addNode
+
+inc = 0
+for light in lights:
+    nodes = []
+    for plane in s.planes():
+        if plane.find(light) != -1 :
+            if plane.find("coat") != -1 or plane.find("reflect") != -1:
+                extract = root.createNode("gui2one_COP_extract_channel")
+                nodes.append(extract)
+                extract.setInput(0,s)
+                extract.setColor(colors[inc % 4])
+                extract.parm("plane_name").set(plane)
+                extract.setName(light +"__"+ plane.split("_")[2] + "__" +plane.split("_")[3])
+            
+    inc += 1
+    
+    
+    for i in range(len(nodes)-1):
+        addNode = root.createNode("add")
+        
+        if i == 0:
+            addNode.setInput(0,nodes[i])
+            addNode.setInput(1,nodes[i+1])
+            oldAdd = addNode
+        else:
+            addNode.setInput(0, oldAdd    )
+            addNode.setInput(1,nodes[i+1])
+            oldAdd = addNode            
+       ]]></script>
+  </tool>
+
+  <tool name="CHOP_clean" label="CHOP_clean" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[nodes = hou.selectedNodes()
+
+inc = 0
+
+for node in nodes :
+    parm = node.parm("export")
+    
+    if parm.eval() != "":
+        parm.set("")        
+        inc += 1
+
+print(str(inc) +" Chop node(s) Export prefix parm  cleaned")        
+   
+    ]]></script>
+  </tool>
+
+  <tool name="find reference" label="find reference" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+
+
+inc = 0
+paramsCounter = 0
+nuggetsFound = []
+
+r = hou.ui.readInput("node name to search :")
+#r = (0,"OUT_oriented_tree_wires")
+searchTarget = r[1]
+
+
+if searchTarget != '' :
+    rDomain = hou.ui.selectNode()
+
+    print rDomain
+    try :
+        test = hou.node(rDomain).allSubChildren()
+    except:
+        print "problem"
+        sys.exit(0)
+        
+    for nd in hou.node(rDomain).allSubChildren() :
+        for parm in nd.parms():
+            paramsCounter += 1
+            try:
+                strParam = str(nd.evalParm(parm.path()))
+                #print strParam
+            except:
+                #print "problem !!!!"
+                strParam = ""
+            if strParam.find(searchTarget)!= -1 :
+                nuggetsFound.append(nd)
+        inc+= 1
+        
+print ("%s nodes, %s paramters, %s nugget found" % (inc,paramsCounter,len(nuggetsFound)))
+for nd in nuggetsFound :
+    print nd.path()
+
+    
+
+]]></script>
+  </tool>
+
+  <tool name="cop_load_captures" label="cop load captures" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[]]></script>
+  </tool>
+
+  <tool name="HtoAE" label="HtoAE" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[# This script exports Houdini objects to Adobe After Effects 8.x
+# A .jsx file will be created
+# You can run it as a script in AE
+# ver 0.01 Andrew V.K.
+
+import toolutils
+import hou 
+import string
+import math
+
+viewer = toolutils.sceneViewer()
+objsel = viewer.selectObjects("Select objects and press Enter",
+        use_existing_selection=False,
+        allow_multisel = True,
+        quick_select=True,
+        allowed_types = ('cam','hlight','null','geo','subnet'))
+
+dir = hou.expandString('$HIP')
+hip = hou.expandString('$HIPNAME')
+dirpath = dir + '/' + hip + '.jsx'
+fname = hou.ui.selectFile( start_directory = dirpath,
+        file_type = hou.fileType.Any,
+        collapse_sequences = False,
+        multiple_select = False,
+        image_chooser   = False)
+if not fname.endswith('.jsx'):
+        fname = fname + '.jsx'
+fp = open(fname,'w')
+
+fps = hou.fps()
+duration = hou.expandString('$TLENGTH')
+fend = string.atoi(hou.expandString('$FEND'))
+fstart = string.atoi(hou.expandString('$FSTART'))
+firstCam = 0
+objCamera = []
+objLight = []
+objNull = []
+
+for obj in objsel:
+    name = obj.name()
+    objType = obj.type().name()
+    if objType == 'cam':
+        resx = obj.parm('resx').eval()
+        resy = obj.parm('resy').eval()
+        aspect = obj.parm('aspect').eval()
+        aperture = obj.parm('aperture').eval()
+        focal = obj.parm('focal').eval()
+        fovx = 2 * math.atan((aperture/2)/focal) 
+        zoom = ((resx/2)/math.tan(fovx/2))
+        if firstCam == 0:
+                objCamera.append('var myItemCollection = app.project.items;\n')
+                objCamera.append('var myComp = myItemCollection.addComp("'+name+'"'+','+`resx`+','+`resy`+','+`aspect`+','+duration+','+`fps`+');\n')
+                objCamera.append('var SceneScaleNull = myComp.layers.addNull();\n')
+                objCamera.append('SceneScaleNull.threeDLayer = true;\n')
+                objCamera.append('SceneScaleNull.name = "Scene Scale";\n')
+                objCamera.append('SceneScaleNull.property("Position").setValue([0.0,0.0,0.0]);\n')
+                objCamera.append('SceneScaleNull.enabled = false;\n')
+                firstCam = 1
+        objCamera.append('var '+name+' = myComp.layers.addCamera("'+name+'",[0,0]);\n')
+        objCamera.append(name+'.autoOrient = AutoOrientType.NO_AUTO_ORIENT;\n')
+        objCamera.append(name+'.property("Zoom").setValue('+`zoom`+');\n') 
+        objCamera.append(name+'.parent = SceneScaleNull;\n')
+    elif objType == 'hlight':
+        lighttype = obj.parm('light_type').eval()
+        intensity = obj.parm('light_intensity').eval()
+        cr = obj.parm('light_colorr').eval()
+        cg = obj.parm('light_colorg').eval()
+        cb = obj.parm('light_colorb').eval()
+        coneangle = obj.parm('coneangle').eval()
+        shadow = obj.parm('shadow_type').eval()
+        objLight.append('var '+name+' = myComp.layers.addLight("'+name+'",[0,0]);\n')
+        objLight.append(name+'.autoOrient = AutoOrientType.NO_AUTO_ORIENT;\n')
+        objLight.append(name+'.property("Intensity").setValue('+`intensity*100`+');\n') 
+        objLight.append(name+'.property("Color").setValue(['+`cr`+','+`cg`+','+`cb`+']);\n') 
+        if shadow > 0:
+                objLight.append(name+'.property("castsShadows").setValue(1);\n') 
+        if lighttype == 1:
+                objLight.append(name+'.property("coneAngle").setValue('+`coneangle`+');\n') 
+        objLight.append(name+'.parent = SceneScaleNull;\n')
+    else:
+        objNull.append('var '+name+' = myComp.layers.addNull()\n')
+        objNull.append(name+'.threeDLayer = true;\n') 
+        objNull.append(name+'.name = "'+name+'";\n')
+        objNull.append(name+'.parent = SceneScaleNull;\n')
+
+if firstCam == 0:
+        fp.write('var myItemCollection = app.project.items;\n')
+        fp.write('var myComp = myItemCollection.addComp("Camera1",640,480,1,%s,%s);\n'%(duration,fps))
+        fp.write('var myCamera = myComp.layers.addCamera("Camera1",[0,0]);\n')
+        fp.write('myCamera.autoOrient = AutoOrientType.NO_AUTO_ORIENT;\n')
+        fp.write('var SceneScaleNull = myComp.layers.addNull();\n')
+        fp.write('SceneScaleNull.threeDLayer = true;\n')
+        fp.write('SceneScaleNull.name = "Scene Scale";\n')
+        fp.write('SceneScaleNull.property("Position").setValue([0.0,0.0,0.0]);\n')
+        fp.write('SceneScaleNull.enabled = false;\n')
+        fp.write('myCamera.parent = SceneScaleNull;\n')
+for x in objCamera:
+   fp.write('%s'%x)
+for x in objLight:
+   fp.write('%s'%x)
+for x in objNull:
+   fp.write('%s'%x)
+
+i = fstart
+while i <= fend:
+        hou.setFrame(i)
+        ftime = hou.frameToTime(i)
+        for obj in objsel:
+            name = obj.name()
+            objType = obj.type().name()
+            wtm = obj.worldTransform()
+            objt = wtm.extractTranslates("srt")
+            tx = objt.__getitem__(0)
+            ty = objt.__getitem__(1) * -1
+            tz = objt.__getitem__(2) * -1
+            objr = wtm.extractRotates("srt","zyx")
+            rx = objr.__getitem__(0)
+            ry = objr.__getitem__(1) * -1
+            rz = objr.__getitem__(2) * -1
+            fp.write('%s.property("X Rotation").setValueAtTime(%f,%f);\n'%(name,ftime,rx)) 
+            fp.write('%s.property("Y Rotation").setValueAtTime(%f,%f);\n'%(name,ftime,ry)) 
+            fp.write('%s.property("Z Rotation").setValueAtTime(%f,%f);\n'%(name,ftime,rz)) 
+            fp.write('%s.property("Position").setValueAtTime(%f,[%f,%f,%f]);\n'%(name,ftime,tx,ty,tz)) 
+            if (objType == 'cam') and (len(obj.parm('focal').keyframes()) != 0):
+                resx = obj.parm('resx').eval()
+                resy = obj.parm('resy').eval()
+                aspect = obj.parm('aspect').eval()
+                aperture = obj.parm('aperture').eval()
+                focal = obj.parm('focal').eval()
+                fovx = 2 * math.atan((aperture/2)/focal) 
+                zoom = ((resx/2)/math.tan(fovx/2))
+                fp.write('%s.property("Zoom").setValueAtTime(%f,%f);\n'%(name,ftime,zoom)) 
+            if objType == 'hlight':
+                if len(obj.parm('light_intensity').keyframes()) != 0:
+                   intensity = obj.parm('light_intensity').eval()
+                   fp.write('%s.property("Intensity").setValueAtTime(%f,%f);\n'%(name,ftime,intensity*100)) 
+                if len(obj.parm('coneangle').keyframes()) != 0:
+                   coneangle = obj.parm('coneangle').eval()
+                   fp.write('%s.property("coneAngle").setValueAtTime(%f,%f);\n'%(name,ftime,coneangle)) 
+                kr = len(obj.parm('light_colorr').keyframes())
+                kg = len(obj.parm('light_colorg').keyframes())
+                kb = len(obj.parm('light_colorb').keyframes())
+                if (kr != 0) or (kg != 0) or (kb != 0):
+                   cr = obj.parm('light_colorr').eval()
+                   cg = obj.parm('light_colorg').eval()
+                   cb = obj.parm('light_colorb').eval()
+                   fp.write('%s.property("Color").setValueAtTime(%f,[%f,%f,%f]);\n'%(name,ftime,cr,cg,cb)) 
+            if (objType == 'geo') or (objType == 'null') or (objType == 'subnet'):
+                objs = wtm.extractScales("srt")
+                sx = objs.__getitem__(0)
+                sy = objs.__getitem__(1)
+                sz = objs.__getitem__(2)
+                fp.write('%s.property("Scale").setValueAtTime(%f,[%f,%f,%f]);\n'%(name,ftime,sx,sy,sz)) 
+        i = i + 1
+fp.close()
+hou.setFrame(fstart)
+        ]]></script>
+  </tool>
+</shelfDocument>
