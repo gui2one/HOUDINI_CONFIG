@@ -1,4 +1,4 @@
-matrix mat = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
+matrix mat = 1;
 
 vector axis = set(1,0,0);
 float angle = radians(90);
