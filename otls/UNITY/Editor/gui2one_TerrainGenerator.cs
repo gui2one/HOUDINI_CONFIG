@@ -472,7 +472,8 @@ public class gui2one_TerrainGenerator : EditorWindow
 		}
 		
 		terrain.treeDistance = m_treeDistance;
-		terrain.treeBillboardDistance = m_treeBillboardDistance;
+        terrain.treeDistance = 0.0f;
+        terrain.treeBillboardDistance = m_treeBillboardDistance;
 		terrain.treeCrossFadeLength = m_treeCrossFadeLength;
 		terrain.treeMaximumFullLODCount = m_treeMaximumFullLODCount;
 		
@@ -549,8 +550,11 @@ public class gui2one_TerrainGenerator : EditorWindow
         terrain.terrainData.SetDetailLayer(0, 0, 2, detailMap2);
         terrain.terrainData.SetDetailLayer(0, 0, 3, detailMap3);
 
+
+        terrain.Flush();
     }
 	
+    
 
 }
 
