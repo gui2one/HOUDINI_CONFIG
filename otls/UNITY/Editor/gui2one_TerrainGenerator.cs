@@ -40,7 +40,7 @@ public class gui2one_TerrainGenerator : EditorWindow
     public float m_baseMapDist = 1000.0f; //The distance at which the low res base map will be drawn. Decrease to increase performance
                                           //Terrain data settings
     public int m_heightMapSize = 513; //Higher number will create more detailed height maps
-    public int m_alphaMapSize = 1024; //This is the control map that controls how the splat textures will be blended
+    public int m_alphaMapSize = 512; //This is the control map that controls how the splat textures will be blended
     
     public int m_terrainHeight = 300;
     public int m_detailMapSize = 2048; //Resolutions of detail (Grass) layers
@@ -257,6 +257,7 @@ public class gui2one_TerrainGenerator : EditorWindow
                 TerrainData terrainData = new TerrainData();
                 terrainData.heightmapResolution = resolution - 1;
                 LoadHeightMap(heightMapFile, terrainData);
+                
 
                 terrainData.size = new Vector3(2048, 300, 2048);
 
@@ -266,7 +267,8 @@ public class gui2one_TerrainGenerator : EditorWindow
                 terrainData.treePrototypes = m_treeProtoTypes;
                 terrainData.detailPrototypes = m_detailProtoTypes;
 
-                FillAlphaMap(terrainData);
+                LoadColorMap("Assets/Resources/height_maps/color_map_01.data", terrainData);
+                //FillAlphaMap(terrainData);
 
                 m_terrain[x, z] = Terrain.CreateTerrainGameObject(terrainData).GetComponent<Terrain>();
                 m_terrain[x, z].transform.position = new Vector3(m_terrainSize * x + m_offset.x, 0, m_terrainSize * z + m_offset.y);
@@ -325,6 +327,44 @@ public class gui2one_TerrainGenerator : EditorWindow
         aTerrain.SetHeights(0, 0, data);
     }
 
+    void LoadColorMap(string aFileName, TerrainData aTerrain)
+    {
+
+        using (var file = System.IO.File.OpenRead(aFileName))
+        using (var reader = new System.IO.BinaryReader(file))
+        {
+            int h = aTerrain.heightmapHeight - 1;
+            int w = aTerrain.heightmapWidth - 1;
+            float[,] data = new float[h, w];
+            float[,,] map = new float[m_alphaMapSize, m_alphaMapSize, 2];
+            for (int x = 0; x < m_alphaMapSize; x++)
+            {
+                for (int z = 0; z < m_alphaMapSize; z++)
+                {
+
+                    float v = (float)reader.ReadUInt16() / 0xFFFF;
+
+                    map[x, z, 0] = v;
+                    map[x, z, 1] = 1.0f - v;
+
+                }
+            }
+            aTerrain.alphamapResolution = m_alphaMapSize;
+            aTerrain.SetAlphamaps(0, 0, map);
+        }
+       // aTerrain.SetAlphamaps(0, 0, map);
+
+
+
+
+
+       
+
+
+
+
+    }
+
     void CreateProtoTypes()
     {
         //Ive hard coded 2 splat prototypes, 3 tree prototypes and 3 detail prototypes.
@@ -334,7 +374,7 @@ public class gui2one_TerrainGenerator : EditorWindow
 
         m_splatPrototypes[0] = new SplatPrototype();
         m_splatPrototypes[0].texture = (Texture2D)m_splat0;
-        m_splatPrototypes[0].normalMap = (Texture2D)m_splat0;
+        //m_splatPrototypes[0].normalMap = (Texture2D)m_splat0;
         m_splatPrototypes[0].tileSize = new Vector2(m_splatTileSize0, m_splatTileSize0);
 
         m_splatPrototypes[1] = new SplatPrototype();
