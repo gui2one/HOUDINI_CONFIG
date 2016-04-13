@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using UnityEditor;
 using System.IO;
 using UnityEngine.Windows;
-
-
+using System;
 
 public class gui2one_TerrainGenerator : EditorWindow
 {
 
+ 
     [MenuItem("Terrain/Terrain Generator", false, 2000)]
     static void OpenWindow()
     {
@@ -20,7 +20,7 @@ public class gui2one_TerrainGenerator : EditorWindow
 
     //Prototypes
     //public Texture2D m_splat0, m_splat1;
-    public float m_splatTileSize0 = 10.0f;
+    public float m_splatTileSize0 = 2.0f;
     public float m_splatTileSize1 = 2.0f;
 
 
@@ -41,9 +41,9 @@ public class gui2one_TerrainGenerator : EditorWindow
                                           //Terrain data settings
     public int m_heightMapSize = 513; //Higher number will create more detailed height maps
     public int m_alphaMapSize = 1024; //This is the control map that controls how the splat textures will be blended
-    public int m_terrainSize = 1024;
+    
     public int m_terrainHeight = 300;
-    public int m_detailMapSize = 1024; //Resolutions of detail (Grass) layers
+    public int m_detailMapSize = 2048; //Resolutions of detail (Grass) layers
                                        //Tree settings
     public int m_treeSpacing = 16; //spacing between trees
     public float m_treeDistance = 30.0f; //The distance at which trees will no longer be drawn
@@ -52,9 +52,9 @@ public class gui2one_TerrainGenerator : EditorWindow
     public int m_treeMaximumFullLODCount = 10; //The maximum number of trees that will be drawn in a certain area. 
                                                //Detail settings
     public DetailRenderMode detailMode;
-    public int m_detailObjectDistance = 400; //The distance at which details will no longer be drawn
-    public float m_detailObjectDensity = 0.3f; //Creates more dense details within patch
-    public int m_detailResolutionPerPatch = 32; //The size of detail patch. A higher number may reduce draw calls as details will be batch in larger patches
+    public int m_detailObjectDistance = 1000; //The distance at which details will no longer be drawn
+    public float m_detailObjectDensity = 1.0f; //Creates more dense details within patch
+    public int m_detailResolutionPerPatch = 64; //The size of detail patch. A higher number may reduce draw calls as details will be batch in larger patches
     public float m_wavingGrassStrength = 0.4f;
     public float m_wavingGrassAmount = 0.2f;
     public float m_wavingGrassSpeed = 0.4f;
@@ -70,44 +70,37 @@ public class gui2one_TerrainGenerator : EditorWindow
     DetailPrototype[] m_detailProtoTypes;
     Vector2 m_offset;
 
-    public Object GO;
+
     public Texture2D m_splat0, m_splat1;
     public GameObject m_tree0, m_tree1, m_tree2;
     public Texture2D m_detail0, m_detail1, m_detail2;
 
     int resolution;
     FileStream heightMap;
-    Texture2D heightMapTex;
+    
     public string heightMapFile;
     string newPath = "";
     string oldPath = "";
     string ext = "";
+    public int m_terrainSize = 1024;
+    string m_splat0_path;
+    string m_splat1_path;
 
     float waterLevel = 1.0f;
 
 
     float[,] m_heightValues;
+
+    void OnFocus()
+    {
+
+        
+
+    }
+
     void OnEnable()
     {
-        resolution = 1024;
-
-        m_splat0 = (Texture2D)Resources.Load("GrassRockyAlbedo 1");
-        m_splat1 = (Texture2D)Resources.Load("GrassHillAlbedo 1");
-
-        m_detail0 = (Texture2D)Resources.Load("GrassFrond01AlbedoAlpha 1");
-        m_detail1 = (Texture2D)Resources.Load("GrassFrond01AlbedoAlpha 1");
-        m_detail2 = (Texture2D)Resources.Load("GrassFrond01AlbedoAlpha 1");
-
-        m_tree0 = (GameObject)Resources.Load("Conifer_Desktop 1");
-        m_tree1 = (GameObject)Resources.Load("Conifer_Desktop 1");
-        m_tree2 = (GameObject)Resources.Load("render_geo");
-
-        //newPath = "Assets/Resources/height_maps/custom_raw.raw";
-        heightMapTex = (Texture2D)Resources.Load(newPath);
-
-        waterLevel = 1.0f;
-
-
+        loadData();
     }
 
     void OnGUI()
@@ -163,6 +156,10 @@ public class gui2one_TerrainGenerator : EditorWindow
         {
             newPath = EditorUtility.OpenFilePanel("Load Houdini Asset", oldPath, ext);
             Debug.Log(newPath);
+            byte[] data = File.ReadAllBytes(newPath);
+
+
+            resolution = (int)Mathf.Sqrt(data.Length / 2);
         }
 
 
@@ -170,17 +167,22 @@ public class gui2one_TerrainGenerator : EditorWindow
         resolution = EditorGUI.IntField(new Rect(0, uiY, position.width, 20.0f), "Resolution", resolution);
 
         uiY += 20;
-        waterLevel = EditorGUI.Slider(new Rect(0, uiY, position.width, 20.0f), waterLevel, -50.0f, 250.0f);
+        EditorGUI.LabelField(new Rect(0, uiY, position.width, width), "Water Level :");
+        uiY += 20;
+        waterLevel = EditorGUI.Slider(new Rect(0, uiY, position.width, 20.0f), waterLevel, -50.0f, 3000.0f);
 
-        heightMap = System.IO.File.OpenRead(newPath);
-        Debug.Log(heightMap);
-        BinaryReader reader = new System.IO.BinaryReader(heightMap);
-        Debug.Log(reader);
-        //int inc = 0;
-        byte[] data = File.ReadAllBytes(newPath);
+        uiY += 20;
+        m_terrainSize = EditorGUI.IntField(new Rect(0, uiY, position.width, 20.0f), "Terrain Size", m_terrainSize);
+        uiY += 20;
+        m_terrainHeight = EditorGUI.IntField(new Rect(0, uiY, position.width, 20.0f), "Terrain Height", m_terrainHeight);
+        //heightMap = System.IO.File.OpenRead(newPath);
+        //Debug.Log(heightMap);
+        //BinaryReader reader = new System.IO.BinaryReader(heightMap);
+        //Debug.Log(reader);
 
 
-        resolution = (int)Mathf.Sqrt(data.Length / 2);
+
+
         //addTerrain = EditorGUILayout.Vector3Field("Add terrain", addTerrain);
         //shiftHeight = EditorGUILayout.Slider("Shift height", shiftHeight, -1f, 1f);
         //bottomTopRadioSelected = GUILayout.SelectionGrid(bottomTopRadioSelected, bottomTopRadio, bottomTopRadio.Length, EditorStyles.radioButton);
@@ -204,14 +206,8 @@ public class gui2one_TerrainGenerator : EditorWindow
         }
     }
 
-
     void Execute()
     {
-
-
-
-
-
 
 
         m_groundNoise = new PerlinNoise(m_groundSeed);
@@ -309,7 +305,6 @@ public class gui2one_TerrainGenerator : EditorWindow
 
     }
 
-
     void LoadHeightMap(string aFileName, TerrainData aTerrain)
     {
         int h = aTerrain.heightmapHeight - 1;
@@ -358,7 +353,7 @@ public class gui2one_TerrainGenerator : EditorWindow
         m_treeProtoTypes[2] = new TreePrototype();
         m_treeProtoTypes[2].prefab = m_tree2;
 
-        m_detailProtoTypes = new DetailPrototype[4];
+        m_detailProtoTypes = new DetailPrototype[3];
 
         m_detailProtoTypes[0] = new DetailPrototype();
         m_detailProtoTypes[0].prototypeTexture = m_detail0;
@@ -371,19 +366,31 @@ public class gui2one_TerrainGenerator : EditorWindow
         m_detailProtoTypes[1].renderMode = DetailRenderMode.Grass;
         m_detailProtoTypes[1].healthyColor = m_grassHealthyColor;
         m_detailProtoTypes[1].dryColor = m_grassDryColor;
+        //m_detailProtoTypes[1].minWidth = 0.5f;
+        //m_detailProtoTypes[1].maxWidth = 1.0f;
+        //m_detailProtoTypes[1].minHeight = 0.1f;
+        //m_detailProtoTypes[1].maxHeight = 0.3f;
 
         m_detailProtoTypes[2] = new DetailPrototype();
         m_detailProtoTypes[2].prototypeTexture = m_detail2;
         m_detailProtoTypes[2].renderMode = DetailRenderMode.Grass;
         m_detailProtoTypes[2].healthyColor = m_grassHealthyColor;
         m_detailProtoTypes[2].dryColor = m_grassDryColor;
+        //m_detailProtoTypes[2].minWidth = 0.5f;
+        //m_detailProtoTypes[2].maxWidth = 1.0f;
+        //m_detailProtoTypes[2].minHeight = 0.1f;
+        //m_detailProtoTypes[2].maxHeight = 0.3f;
 
-        m_detailProtoTypes[3] = new DetailPrototype();
-        m_detailProtoTypes[3].usePrototypeMesh = true;
-        m_detailProtoTypes[3].prototype = (GameObject)Resources.Load("render_geo");
-        m_detailProtoTypes[3].renderMode = DetailRenderMode.VertexLit;
-        m_detailProtoTypes[3].healthyColor = Color.white;
-        m_detailProtoTypes[3].dryColor = Color.white;
+        //m_detailProtoTypes[3] = new DetailPrototype();
+        //m_detailProtoTypes[3].usePrototypeMesh = true;
+        //m_detailProtoTypes[3].prototype = (GameObject)Resources.Load("render_geo");
+        //m_detailProtoTypes[3].renderMode = DetailRenderMode.VertexLit;
+        //m_detailProtoTypes[3].healthyColor = Color.white;
+        //m_detailProtoTypes[3].dryColor = Color.white;
+        //m_detailProtoTypes[3].minWidth = 0.5f;
+        //m_detailProtoTypes[3].maxWidth = 1.0f;
+        //m_detailProtoTypes[3].minHeight = 0.1f;
+        //m_detailProtoTypes[3].maxHeight = 0.3f;
 
 
     }
@@ -438,10 +445,7 @@ public class gui2one_TerrainGenerator : EditorWindow
         terrainData.alphamapResolution = m_alphaMapSize;
         terrainData.SetAlphamaps(0, 0, map);
     }
-
-
-
-
+    
     void FillTreeInstances(Terrain terrain, int tileX, int tileZ)
     {
         UnityEngine.Random.seed = 0;
@@ -471,11 +475,11 @@ public class gui2one_TerrainGenerator : EditorWindow
                     float worldPosX = x + tileX * (m_terrainSize - 1);
                     float worldPosZ = z + tileZ * (m_terrainSize - 1);
 
-                    //float noise = m_treeNoise.FractalNoise2D(worldPosX, worldPosZ, 3, m_treeFrq, 1.0f);
-                    float noise = 1.0f;
+                    float noise = m_treeNoise.FractalNoise2D(worldPosX, worldPosZ, 3, m_treeFrq, 1.0f);
+                    //float noise = 1.0f;
                     float ht = terrain.terrainData.GetInterpolatedHeight(normX, normZ);
 
-                    if (noise > 0.0f && ht < m_terrainHeight * 0.9f && ht > waterLevel)
+                    if (noise > 0.2f && ht < m_terrainHeight * 0.9f && ht > waterLevel)
                     {
 
                         TreeInstance temp = new TreeInstance();
@@ -570,14 +574,95 @@ public class gui2one_TerrainGenerator : EditorWindow
         terrain.terrainData.SetDetailLayer(0, 0, 0, detailMap0);
         terrain.terrainData.SetDetailLayer(0, 0, 1, detailMap1);
         terrain.terrainData.SetDetailLayer(0, 0, 2, detailMap2);
-        terrain.terrainData.SetDetailLayer(0, 0, 3, detailMap3);
+       // terrain.terrainData.SetDetailLayer(0, 0, 3, detailMap3);
 
 
         terrain.Flush();
     }
 
 
+    void OnDestroy()
+    {
+        saveData();
+        Debug.Log("save DATA !!!!!!!!!!!!!!!");
+    }
+    void saveData()
+    {
 
+        StreamWriter sw = new StreamWriter("test.txt");
+        sw.WriteLine("m_splat0="+AssetDatabase.GetAssetPath(m_splat0));
+        sw.WriteLine("m_splat1=" + AssetDatabase.GetAssetPath(m_splat1));
+
+        sw.WriteLine("m_detail0=" + AssetDatabase.GetAssetPath(m_detail0));
+        sw.WriteLine("m_detail1=" + AssetDatabase.GetAssetPath(m_detail1));
+        sw.WriteLine("m_detail2=" + AssetDatabase.GetAssetPath(m_detail2));
+
+        sw.WriteLine("m_tree0=" + AssetDatabase.GetAssetPath(m_tree0));
+        sw.WriteLine("m_tree1="+AssetDatabase.GetAssetPath(m_tree1));
+        sw.WriteLine("m_tree2="+AssetDatabase.GetAssetPath(m_tree2));
+
+        sw.WriteLine("heightMapFile="+heightMapFile);
+        sw.WriteLine("resolution="+resolution);
+
+        sw.WriteLine("waterLevel=" + waterLevel);
+        sw.WriteLine("m_terrainSize=" + m_terrainSize);
+        sw.WriteLine("m_terrainHeight=" + m_terrainHeight);
+
+        sw.Close();
+    }
+
+    void loadData()
+    {
+
+        string line;
+        StreamReader sr = new StreamReader("test.txt");
+        while ((line = sr.ReadLine()) != null) {
+            string[] s = line.Split("="[0]);
+            Debug.Log(s[0] +" ---> "+ s[1]);
+            if (s[0] == "m_splat0")
+            {
+                m_splat0 = (Texture2D)AssetDatabase.LoadAssetAtPath<Texture2D>(s[1]);
+                Debug.Log("heyyyyyyyyyyyyyyyyyy");
+            }
+                
+            else if (s[0] == "m_splat1" && s[1]  != "")
+                m_splat1 = (Texture2D)AssetDatabase.LoadAssetAtPath<Texture2D>(s[1]);
+
+            else if (s[0] == "m_detail0" && s[1] != "")
+                m_detail0 = (Texture2D)AssetDatabase.LoadAssetAtPath<Texture2D>(s[1]);
+            else if (s[0] == "m_detail1" && s[1] != "")
+                m_detail1 = (Texture2D)AssetDatabase.LoadAssetAtPath<Texture2D>(s[1]);
+            else if (s[0] == "m_detail2" && s[1] != "")
+                m_detail2 = (Texture2D)AssetDatabase.LoadAssetAtPath<Texture2D>(s[1]);
+
+            else if (s[0] == "m_tree0" && s[1] != "")
+                m_tree0 = AssetDatabase.LoadAssetAtPath<GameObject>(s[1]);
+
+            else if (s[0] == "m_tree1" && s[1] != "")
+                m_tree1 = AssetDatabase.LoadAssetAtPath<GameObject>(s[1]);
+
+            else if (s[0] == "m_tree2" && s[1] != "")
+                m_tree2 = AssetDatabase.LoadAssetAtPath<GameObject>(s[1]);
+
+            else if (s[0] == "heightMapFile" && s[1] != "")
+                newPath = s[1];
+
+            else if (s[0] == "resolution" && s[1] != "")
+                resolution = Int32.Parse(s[1]);
+
+            else if (s[0] == "waterLevel" && s[1] != "")
+                waterLevel = float.Parse(s[1]);
+
+            else if (s[0] == "m_terrainSize" && s[1] != "")
+                m_terrainSize = Int32.Parse(s[1]);
+            else if (s[0] == "m_terrainHeight" && s[1] != "")
+                m_terrainHeight = Int32.Parse(s[1]);
+
+        }
+        sr.Close();
+        
+
+    }
 }
 
 
