@@ -30,12 +30,13 @@ class MyCustomWidget(QtWidgets.QWidget):
         self.combo.addItem("HIP")
         self.combo.addItem("choose folder ....")
 
-        self.combo.currentIndexChanged.connect(self.comboChanged)
+        self.combo.activated.connect(self.comboChanged)
 
         reloadBtn = QtWidgets.QPushButton("Reload")
         reloadBtn.released.connect(self.reloadBtnClicked)
 
         self.listWidget = QtWidgets.QListWidget()
+        #self.listWidget.resize(200,200)
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -56,7 +57,7 @@ class MyCustomWidget(QtWidgets.QWidget):
         elif index == 1:
             self.rootPath = hou.getenv("HIP")
         elif index == self.combo.count() - 1:
-            chosenPath = hou.ui.selectFile("", "select a folder to copy file into")
+            chosenPath = hou.ui.selectFile("", "select a project folder")
             self.rootPath = chosenPath
             print '!!!!!!!!!!!!!!', self.rootPath
         print self.combo.count()
@@ -68,6 +69,7 @@ class MyCustomWidget(QtWidgets.QWidget):
     def createList(self):
         files = os.listdir(self.rootPath)
 
+        self.listWidget.clear()
         for file in files:
             if not os.path.isdir(os.path.join(proj, file)):
                 if file.endswith('.hiplc') or file.endswith('.hip') or file.endswith('hipnc'):
