@@ -55,6 +55,8 @@ class myWindow(QtGui.QWidget):
 
 		mainLayout.addRow("Max Samples:",self.maxSamplesSB)
 		
+		self.disablePassesToggle = QtGui.QCheckBox()
+		mainLayout.addRow("Disable Passes:", self.disablePassesToggle)
 
 		self.renderBtn = QtGui.QPushButton('render', self)
 		mainLayout.addWidget(self.renderBtn)
@@ -68,6 +70,12 @@ class myWindow(QtGui.QWidget):
 		self.setGeometry(300, 300, 680, 380)
 		self.setWindowTitle('Hython -- RENDER OCTANE SCENE') 
 
+
+		self.renderToMPlayToggle = QtGui.QCheckBox()
+		mainLayout.addRow("Render to MPlay:", self.renderToMPlayToggle)
+
+		self.overwriteMPlayToggle = QtGui.QCheckBox()
+		mainLayout.addRow("Overwrite Mplay Frame:", self.overwriteMPlayToggle)		
 		
 		frameRangeLabel = QtGui.QLabel("Frame Range")
 		mainLayout.addWidget(frameRangeLabel)
@@ -84,6 +92,17 @@ class myWindow(QtGui.QWidget):
 		self.frameIncSB.setMaximum(10000000)
 		mainLayout.addRow("Increment:",self.frameIncSB)	
 
+
+
+		self.outputImageFilesToggle = QtGui.QCheckBox()
+		mainLayout.addRow("Output image Files:",self.outputImageFilesToggle)
+
+		self.createDirectoriesToggle = QtGui.QCheckBox()
+		mainLayout.addRow("Create Directories:",self.createDirectoriesToggle)
+
+
+		self.outputFilePath = QtGui.QLineEdit()
+		mainLayout.addRow("Output File Path:", self.outputFilePath)
 
 		self.setLayout(mainLayout)
 		self.show()
@@ -111,16 +130,28 @@ class myWindow(QtGui.QWidget):
 		self.rop = self.availableRops[index]
 		renderTarget = hou.node(self.rop.parm("HO_renderTarget").eval())
 
+		self.renderToMPlayToggle.setChecked(self.rop.parm("HO_renderToMPlay").eval())
+		self.overwriteMPlayToggle.setChecked(self.rop.parm("HO_overwriteMPlay").eval())
+
 		# set frame range
 		self.frameStartSB.setValue(self.rop.parm("f1").eval() ) 
 		self.frameEndSB.setValue(self.rop.parm("f2").eval() ) 
 		self.frameIncSB.setValue(self.rop.parm("f3").eval()	 ) 
+
+
+		# set output file path
+		self.outputFilePath.setText( self.rop.parm("HO_img_fileName").unexpandedString())
+
+		self.outputImageFilesToggle.setChecked( self.rop.parm("HO_img_enable").eval())
+		self.createDirectoriesToggle.setChecked( self.rop.parm("HO_img_createDir").eval())
 
 		if renderTarget != None :
 			kID = renderTarget.parm("parmKernel").eval()
 			self.kernelCB.setCurrentIndex(kID)
 			self.infosLabel.setText("")
 			self.chooseKernel(kID)
+
+			self.disablePassesToggle.setChecked( renderTarget.parm("enablePassesNode").eval() )
 
 
 			
@@ -169,11 +200,14 @@ class myWindow(QtGui.QWidget):
 					
 		
 	def launchRender(self):
+		renderTarget = hou.node(self.rop.parm("HO_renderTarget").eval())
+		renderTarget.parm("enablePassesNode").set(self.disablePassesToggle.isChecked())
 
-		self.rop.parm("HO_renderToMPlay").set(0)
+		self.rop.parm("HO_renderToMPlay").set(self.renderToMPlayToggle.isChecked())
+		self.rop.parm("HO_overwriteMPlay").set(self.overwriteMPlayToggle.isChecked())
 
 		# override render resolution
-		self.rop.parm('HO_overrideCameraRes').set(1)
+		self.rop.parm('HO_overrideCameraRes').set(0)
 		self.rop.parm('HO_overrideResScale').set(7)
 
 		self.rop.parm('HO_overrideRes1').deleteAllKeyframes()
@@ -189,6 +223,18 @@ class myWindow(QtGui.QWidget):
 		self.rop.parm("f1").set(self.frameStartSB.value())
 		self.rop.parm("f2").set(self.frameEndSB.value())
 		self.rop.parm("f3").set(self.frameIncSB.value())
+
+
+
+		self.rop.parm("HO_img_enable").set(self.outputImageFilesToggle.isChecked())
+
+		self.rop.parm("HO_img_createDir").set(self.createDirectoriesToggle.isChecked())
+
+		self.rop.parm("HO_img_fileName").set( self.outputFilePath.text())
+
+		self.rop.parm("HO_img_fileFormat").set(2) ## 2 --> PNG 8 bits 
+
+
 
 		# set render frame range : 1 or 2(strict) , or 0 for single frame
 		self.rop.parm('trange').set(1)
@@ -207,7 +253,7 @@ class myWindow(QtGui.QWidget):
 		self.rop.parm("execute").pressButton()
 		
 
-		print "R E N D E R I N G ....."
+		print "R E N D E R I N G    F I N I S H E D ....."
 
 if __name__ == '__main__':
 

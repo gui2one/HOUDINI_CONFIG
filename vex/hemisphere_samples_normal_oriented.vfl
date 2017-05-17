@@ -1,0 +1,11 @@
+int samples = 10;
+
+for(int i=0; i < samples; i++){
+    vector samplePos = set(rand(i+22)*2.0-1,rand(i+33),rand(i)*2.0-1);
+    
+    matrix3 dih = dihedral(set(0,1,0),@N);
+    
+    //samplePos = vtransform(samplePos, dih);
+
+    int pt = addpoint(0, normalize(samplePos*dih));
+}
