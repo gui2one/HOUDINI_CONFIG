@@ -2,16 +2,17 @@
 import hou
 import os
 import sys
-import inspect
-inspect.getfile(os)
+# import inspect
+#
+# inspect.getfile(os)
 
 sys.path.append("C:/Python27/Lib/site-packages/")
-
-
 
 from PySide2 import QtWidgets
 from PySide2.QtCore import *
 from PySide2.QtGui import *
+
+
 #
 #
 class MyCustomWidget(QtWidgets.QWidget):
@@ -22,8 +23,16 @@ class MyCustomWidget(QtWidgets.QWidget):
         self.rootPath = ""
         QtWidgets.QWidget.__init__(self)
 
+        mainLayout = QtWidgets.QVBoxLayout()
+
+        bottomLayout = QtWidgets.QHBoxLayout()
+
+        btn1 = QtWidgets.QPushButton("btn1")
+        btn2 = QtWidgets.QPushButton("btn2")
+
+        bottomLayout.addWidget(btn1)
+        bottomLayout.addWidget(btn2)
         # self.rootPath = hou.getenv("HIP")
-        label1 = QtWidgets.QLabel("Hello World")
 
         self.combo = QtWidgets.QComboBox()
         self.combo.addItem("JOB")
@@ -36,7 +45,7 @@ class MyCustomWidget(QtWidgets.QWidget):
         reloadBtn.released.connect(self.reloadBtnClicked)
 
         self.listWidget = QtWidgets.QListWidget()
-        #self.listWidget.resize(200,200)
+        # self.listWidget.resize(200,200)
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -44,14 +53,16 @@ class MyCustomWidget(QtWidgets.QWidget):
         layout.addWidget(self.combo)
         layout.addWidget(self.listWidget)
 
-        layout.setAlignment(Qt.AlignTop)
-        self.setLayout(layout)
+        mainLayout.addLayout(layout)
+        mainLayout.addLayout(bottomLayout)
+        # layout.setAlignment(Qt.AlignTop)
+        self.setLayout(mainLayout)
 
         # Apply Houdini styling to the main widget.
         self.setProperty("houdiniStyle", True)
 
     def comboChanged(self, index):
-        print "combo changed, index : ", index
+        # print "combo changed, index : ", index
         if index == 0:
             self.rootPath = hou.getenv("JOB")
         elif index == 1:
@@ -59,21 +70,22 @@ class MyCustomWidget(QtWidgets.QWidget):
         elif index == self.combo.count() - 1:
             chosenPath = hou.ui.selectFile("", "select a project folder")
             self.rootPath = chosenPath
-            print '!!!!!!!!!!!!!!', self.rootPath
-        print self.combo.count()
+            # print '!!!!!!!!!!!!!!', self.rootPath
+        # print self.combo.count()
         self.createList()
 
     def reloadBtnClicked(self):
-        print "clicked", self.rootPath
+        # print "clicked", self.rootPath
+        pass
 
     def createList(self):
         files = os.listdir(self.rootPath)
 
         self.listWidget.clear()
-        for file in files:
-            if not os.path.isdir(os.path.join(proj, file)):
-                if file.endswith('.hiplc') or file.endswith('.hip') or file.endswith('hipnc'):
-                    self.listWidget.addItem(file)
+        for f in files:
+            if not os.path.isdir(os.path.join(proj, f)):
+                if f.endswith('.hiplc') or f.endswith('.hip') or f.endswith('hipnc'):
+                    self.listWidget.addItem(f)
 
         self.listWidget.doubleClicked.connect(self.openHipFile)
 
@@ -82,6 +94,7 @@ class MyCustomWidget(QtWidgets.QWidget):
 
 
 proj = hou.getenv('JOB')
+
 
 def createInterface():
     custom = MyCustomWidget()
