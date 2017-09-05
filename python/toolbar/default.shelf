@@ -21,11 +21,22 @@ shelfutils.installOrboltAsset(kwargs, "SideFX::toonsimple", "http://www.orbolt.c
     <memberTool name="find reference"/>
     <memberTool name="cop_load_captures"/>
     <memberTool name="HtoAE"/>
+    <memberTool name="HtoAE_V2"/>
+    <memberTool name="HtoAE_V3"/>
     <memberTool name="obj_export"/>
-    <memberTool name="view_paint"/>
     <memberTool name="freeze_curve_edit"/>
     <memberTool name="shader_preview"/>
     <memberTool name="place_obj"/>
+    <memberTool name="copy_textures"/>
+    <memberTool name="find_materials"/>
+    <memberTool name="edges_to_curve"/>
+    <memberTool name="bake_keyframes"/>
+    <memberTool name="Cop_detect_passes"/>
+    <memberTool name="import_AE3D_cam"/>
+    <memberTool name="read_raw_file"/>
+    <memberTool name="write_raw_file"/>
+    <memberTool name="write_raw_file_V2"/>
+    <memberTool name="octane_ROP_preview"/>
   </toolshelf>
 
   <tool name="null_OUT" label="null_OUT" icon="PLASMA_App">
@@ -51,7 +62,7 @@ nullNode.setColor(hou.Color((1.0,0.0,0.0)))
 
 for conn in sel.outputConnections():
     index = conn.inputIndex()
-    outputNode = conn.outputNode()
+    outputNode = conn.outputItem()
     outputNode.setInput(index,nullNode)
     #print outputNode.name
   
@@ -292,12 +303,16 @@ minFrame = 2000
 maxFrame = 0
 
 fileName = ""
-viewer = toolutils.sceneViewer()
-objsel = viewer.selectObjects("Select objects and press Enter",
-        use_existing_selection=False,
-        allow_multisel = True,
-        quick_select=True,
-        allowed_types = ('cam','hlight','null','geo','subnet'))
+
+if len(hou.selectedNodes()) == 0 :
+    viewer = toolutils.sceneViewer()
+    objsel = viewer.selectObjects("Select objects and press Enter",
+            use_existing_selection=False,
+            allow_multisel = True,
+            quick_select=True,
+            allowed_types = ('cam','hlight','null','geo','subnet'))
+else :
+    objsel = hou.selectedNodes()
 
 for obj in objsel:
     name = obj.name()
@@ -338,7 +353,7 @@ fname = hou.ui.selectFile( start_directory = dirpath,
         image_chooser   = False)
 if not fname.endswith('.jsx'):
         fname = fname + '.jsx'
-fp = open(fname,'w')
+fp = open(hou.expandString(fname),'w')
 
 fps = hou.fps()
 #duration = hou.expandString('$TLENGTH')
@@ -394,7 +409,7 @@ for obj in objsel:
                 objLight.append(name+'.property("coneAngle").setValue('+`coneangle`+');\n') 
         objLight.append(name+'.parent = SceneScaleNull;\n')
     else:
-        objNull.append('var '+name+' = myComp.layers.addNull()\n')
+        objNull.append('var '+name+' = myComp.layers.addNull();\n')
         objNull.append(name+'.threeDLayer = true;\n') 
         objNull.append(name+'.name = "'+name+'";\n')
         objNull.append(name+'.parent = SceneScaleNull;\n')
@@ -694,29 +709,10 @@ for item in objDict:
     print ("Export Succeeded for %s"% (objName))]]></script>
   </tool>
 
-  <tool name="view_paint" label="view_paint" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[desk =  hou.ui.curDesktop()
-
-cam = hou.node('/obj/').createNode('cam')
-cam.setName('paint_camera')
-
-sceneViewer = None
-for paneTab in desk.paneTabs():
-    type = paneTab.type()
-    
-    if str(type) == "paneTabType.SceneViewer" :
-        sceneViewer = paneTab
-        break
-        
-viewport = sceneViewer.curViewport()
-
-viewport.saveViewToCamera(cam)
-viewport.setCamera(cam)
-
-    ]]></script>
-  </tool>
-
   <tool name="freeze_curve_edit" label="freeze_curve_edit" icon="PLASMA_App">
+    <toolMenuContext name="network">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import sys
 
 selection = hou.selectedNodes()
@@ -854,8 +850,1120 @@ sel.parm("ty").set(newPos.y())
 sel.parm("tz").set(newPos.z())]]></script>
   </tool>
 
-  <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.632/houdini/toolbar\ShelfDefinitions.shelf">
-    <addMemberToolshelf name="octane" inPosition="13"/>
-    <addMemberToolshelf name="gui2one" inPosition="14"/>
+  <tool name="copy_textures" label="Copy Textures" icon="hicon:/SVGIcons.index?BUTTONS_add_image.svg">
+    <script scriptType="python"><![CDATA[import os
+import shutil
+
+
+chosenPath = hou.ui.selectFile("","select a folder to copy file into")
+hipPath = hou.expandString(chosenPath)
+#print os.path.abspath(hipPath)
+#print chosenPath
+
+sel = hou.selectedNodes()
+
+filesToCopy = []
+linksDict = {}
+
+for node in sel:
+    for child in node.children():
+    
+        if child.type().name() == "octane::NT_TEX_IMAGE" or child.type().name() == "octane::NT_TEX_FLOATIMAGE" or child.type().name() == "octane::NT_TEX_ALPHAIMAGE":
+    
+            filePath = child.parm("A_FILENAME").eval()
+            
+            if not filePath in filesToCopy:
+                filesToCopy.append(filePath)
+            
+    #print filesToCopy
+    
+    ### copy files to chosen directory
+    for file in filesToCopy:
+        shutil.copy2(file, hipPath)
+        linksDict[ file ] = str(hipPath)+ str(os.path.basename(file))
+        
+        
+    
+    
+    ### loop back through texture node in octane network to update image file paths
+    for child in node.children():
+    
+        if child.type().name() == "octane::NT_TEX_IMAGE" or child.type().name() == "octane::NT_TEX_FLOATIMAGE" or child.type().name() == "octane::NT_TEX_ALPHAIMAGE":
+            filePath = child.parm("A_FILENAME").eval()
+            
+            expandedHipString = hou.expandString("$HIP")
+            newPath = linksDict[filePath].replace( expandedHipString, "$HIP")
+            child.parm("A_FILENAME").set(newPath)
+        
+    
+    
+    
+    
+    
+    ]]></script>
+  </tool>
+
+  <tool name="find_materials" label="Find Materials" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+import os
+
+sel = hou.selectedNodes()
+shops = []
+parmsDir = {}
+for item in sel:
+    #print "exploring : ", item.name()
+    matParm = item.parm("shop_materialpath")
+    objMat = matParm.eval()
+    if objMat != "":
+        shopPath = matParm.eval()
+        #check if already a relative path
+        if shopPath[:1] != "." :
+            if shopPath != "" and not hou.node(shopPath) in shops:
+                
+                shops.append(hou.node(shopPath))
+                parmsDir[ len(parmsDir)] = [matParm , shops.__len__()-1, item.path()]                        
+                
+            elif shopPath != "" :
+                parmsDir[ len(parmsDir)] = [matParm , shops.__len__()-1, item.path()]
+        
+    children = item.glob("*")
+    
+    for child in children:
+        if child.type().name() == "material":
+            #print "\t-found Material sop : ", child.path()
+         
+            for i in range(child.parm("num_materials").eval()):
+                shopPath = child.parm("shop_materialpath"+str(i+1)).eval()
+                
+                #check if already a relative path
+                if shopPath[:1] != "." :                
+                
+                
+                    if shopPath != "" and not hou.node(shopPath) in shops:
+                        
+                        shops.append(hou.node(shopPath))
+                        parmsDir[ len(parmsDir)] = [child.parm("shop_materialpath"+str(i+1)) , shops.__len__()-1, child.path()]                        
+                        
+                    elif shopPath != "":
+                        parmsDir[ len(parmsDir)] = [child.parm("shop_materialpath"+str(i+1)) , shops.__len__()-1, child.path()]
+print shops 
+#choices = []
+#for item in shops:
+#    choices.append(item.path())
+#    
+#choice = hou.ui.selectFromList(choices)
+
+inc = 0
+for entry in parmsDir:
+
+    currentPath =  parmsDir[entry][0].eval()
+    targetNode = hou.node(currentPath)
+    
+    currentNodePath = parmsDir[entry][2]
+    
+    #hou.cd(os.path.dirname(parmsDir[entry][2]))
+    
+    relativePath = hou.node(currentNodePath).relativePathTo(targetNode)
+
+    print inc,currentNodePath,relativePath
+    
+    
+    parmsDir[entry][0].set(relativePath)
+    inc += 1
+ 
+print parmsDir
+                            
+                
+    ]]></script>
+  </tool>
+
+  <tool name="edges_to_curve" label="Edges To Curve" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import toolutils
+import sys        
+selection = toolutils.sceneViewer().selectGeometry()
+selStr = selection.selectionStrings()
+
+
+curveNodes = []
+if selStr.__len__() == 0:
+    print "no selection"
+else:    
+    #print "-----------------------"
+    #print "selection :", selection
+    nodes = selection.nodes()
+    curSop = nodes[0]
+    
+    
+    
+    if selection.geometryType() == hou.geometryType.Edges:    
+        segs = selStr[0].split(' ')   
+        for seg in segs:
+            #print "Seg :",seg
+            curveNode = curSop.parent().createNode("curve")
+            curveStr = ''
+            pts = str(seg)[1:].split('-')
+            pattern = ''
+            for pt in pts:
+                pattern += pt+' '
+                curveStr += str(curSop.geometry().freeze().points()[int(pt)].position().x()) + ","
+                curveStr += str(curSop.geometry().freeze().points()[int(pt)].position().y()) + ","
+                curveStr += str(curSop.geometry().freeze().points()[int(pt)].position().z()) + " "
+
+            
+            curveNode.parm("coords").set(curveStr)
+            curveNodes.append(curveNode)
+            
+        if len(curveNodes) > 1:
+            mergeNode = curSop.parent().createNode('merge')
+            for i,node in enumerate(curveNodes):
+                mergeNode.setInput(i, node)
+]]></script>
+  </tool>
+
+  <tool name="bake_keyframes" label="bake keyframes" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+sel = hou.selectedNodes()
+if len(sel) == 0:
+    hou.ui.displayMessage("select a node with animted channel(s)")
+    sys.exit()
+  
+
+
+def bakeKeyframes(node):
+    animatedParms = [] 
+    
+    frameRange = range(int(hou.expandString('$RFSTART')), int(hou.expandString('$RFEND'))+1,1)
+    
+#    print frameRange
+
+    obj = node
+    print obj.name()
+    
+    bakeNull = hou.node("/obj/").createNode("null")
+    print hou.node("baking_null_"+ obj.name())
+    if hou.node("/obj/baking_null_"+ obj.name()) != None:
+        print "hey"
+        hou.node("/obj/baking_null_"+ obj.name()).destroy()
+    bakeNull.setName("baking_null_"+ obj.name())
+    bakeNull.moveToGoodPosition()    
+    
+    for parm in obj.parms():
+        if len(parm.keyframes()) > 1:
+            animatedParms.append(parm)
+            
+    print animatedParms
+    
+    
+    keyframes_TX = []
+    keyframes_TY = []    
+    keyframes_TZ = []   
+    
+    keyframes_RX = []
+    keyframes_RY = []    
+    keyframes_RZ = []        
+    
+    for i in frameRange:
+    
+        time = float(i-1) / hou.fps()
+       
+        tr = obj.worldTransformAtTime( time ).extractTranslates()        
+#        print i, " ----- " , tr.x()
+        key = hou.Keyframe()
+        key.setTime(time)
+        key.setValue(tr.x())
+        keyframes_TX.append(key)
+        
+        key = hou.Keyframe()
+        key.setTime(time)
+        key.setValue(tr.y())
+        keyframes_TY.append(key)     
+        
+        key = hou.Keyframe()
+        key.setTime(time)
+        key.setValue(tr.z())
+        keyframes_TZ.append(key)         
+        
+        
+        rot = obj.worldTransformAtTime( time ).extractRotates()
+        
+        key = hou.Keyframe()
+        key.setTime(time)
+        key.setValue(rot.x())
+        keyframes_RX.append(key)
+        
+        key = hou.Keyframe()
+        key.setTime(time)
+        key.setValue(rot.y())
+        keyframes_RY.append(key)     
+        
+ 
+        key = hou.Keyframe()
+        key.setTime(time)
+        key.setValue(rot.z())
+        keyframes_RZ.append(key)          
+
+        
+    # print keyframes_TX
+    
+    bakeNull.parm("tx").setKeyframes( keyframes_TX )
+    bakeNull.parm("ty").setKeyframes( keyframes_TY )
+    bakeNull.parm("tz").setKeyframes( keyframes_TZ )    
+    
+    bakeNull.parm("rx").setKeyframes( keyframes_RX )
+    bakeNull.parm("ry").setKeyframes( keyframes_RY )
+    bakeNull.parm("rz").setKeyframes( keyframes_RZ )        
+    
+    
+    
+    ## transfer keyframes to original object
+    ## unparent before
+    
+    
+    
+    obj.parm("tx").deleteAllKeyframes()
+    obj.parm("tx").setKeyframes(keyframes_TX)
+    
+    obj.parm("ty").deleteAllKeyframes()
+    obj.parm("ty").setKeyframes(keyframes_TY)    
+    
+    obj.parm("tz").deleteAllKeyframes()
+    obj.parm("tz").setKeyframes(keyframes_TZ)        
+    
+    obj.parm("rx").deleteAllKeyframes()
+    obj.parm("rx").setKeyframes(keyframes_RX)  
+    
+    obj.parm("ry").deleteAllKeyframes()
+    obj.parm("ry").setKeyframes(keyframes_RY)     
+    
+    obj.parm("rz").deleteAllKeyframes()
+    obj.parm("rz").setKeyframes(keyframes_RZ)   
+    
+    obj.setInput(0,None)
+    
+bakeKeyframes(sel[0])]]></script>
+  </tool>
+
+  <tool name="Cop_detect_passes" label="COP detect passes" icon="hicon:/SVGIcons.index?BUTTONS_add_image.svg">
+    <script scriptType="python"><![CDATA[import os
+import re
+import sys
+
+file = hou.ui.selectFile("",pattern="*")
+
+if file == "":
+    sys.exit(0)
+    
+ext = os.path.splitext(file)[1]
+
+print "extension :", ext
+
+filePath = hou.expandString(file)
+
+dirName = os.path.dirname(filePath)
+
+allFiles = os.listdir(dirName)
+
+imgFiles = []
+
+listTitles = []
+
+listNumFrames = []
+
+for f in allFiles :
+    if not os.path.isdir(os.path.join(dirName,f)):   
+        
+        if os.path.splitext(f)[1] == ext :
+            imgFiles.append(f)
+            regex = re.compile('\d+', re.IGNORECASE)
+            
+            startId = -1
+            digits = ""
+            for match in regex.finditer(f):
+                if match.start() > startId :
+                    startId = match.start()
+                    digits = match.group(0)
+                # print "%s: %s" % (match.start(), f)  
+                
+            # print "startId :",startId,"digits :", digits, "file :",f
+            # mo = re.findall('\d+', f)
+            strippedStr = f.replace(digits,"$F4")
+            
+            if not strippedStr in listTitles:
+            
+                listTitles.append( strippedStr )
+                
+
+                
+
+
+imgNode = hou.node("/img/").createNode("img")
+print dirName
+copnetName = os.path.basename(filePath)
+print "copnetName : ", copnetName
+imgNode.setName(copnetName,  unique_name = True)
+imgNode.moveToGoodPosition()
+
+
+choices = hou.ui.selectFromList(listTitles)
+for choice in choices:
+    # print "choice :",choice
+    fileNode = imgNode.createNode("file")
+    fileNode.setName( os.path.basename( os.path.join(dirName, hou.expandString(listTitles[choice]))), unique_name = True)
+    
+    fileName = os.path.join(dirName, listTitles[choice])
+    fileNode.parm("filename1").set(fileName.replace("\\","/"))
+    
+    # print listTitles[choice]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ]]></script>
+  </tool>
+
+  <tool name="import_AE3D_cam" label="import AE3D camera" icon="hicon:/SVGIcons.index?CHOP_voicesplit.svg">
+    <script scriptType="python"><![CDATA[cam = hou.node("/obj/").createNode("cam")
+
+msFile = hou.ui.selectFile("Select ms file", pattern="*.ms")
+
+f = open(msFile,"r")
+
+
+data = f.readlines()
+
+f.close()
+
+framesArray = []
+positions = []
+rotations = []
+for line in data :
+    
+
+    targetString = "at time"
+    if targetString in line:
+        frameNum = int( line[len(targetString)+1 : ].split(" ")[0])
+        
+        hou.setFrame( frameNum )
+        if not frameNum in framesArray :
+            framesArray.append(frameNum)
+            rotation = []
+            #print "\nFrame :", frameNum, "\n -----------------------------"
+            
+        if "x_rotation" in line:
+            val = float(line.split(" = ")[1].strip("\n"))
+            rotation.append(val)
+            #print "rotation X : ", val
+            
+        elif "y_rotation" in line:
+            val = float(line.split(" = ")[1].strip("\n"))
+            rotation.append(val)
+            #print "rotation Y : ", val
+            
+        elif "z_rotation" in line:
+            val = float(line.split(" = ")[1].strip("\n"))
+            rotation.append(val)
+            rotations.append(rotation)
+            #print "rotation Z : ", val
+            
+        elif ".pos" in line:
+            posArray = line.split(" = ")[1].strip("\n").strip("[").strip("]").split(",")
+            
+            for i,item in enumerate(posArray):
+                posArray[i] = float(item)
+            position = posArray    
+            positions.append(position)
+
+#print rotations
+
+# # after grabbing data, we create keyframes    
+TX = []
+TY = []
+TZ = []
+
+RX = []
+RY = []
+RZ = []
+for i, frameNum in enumerate(framesArray):
+
+    key = hou.Keyframe()
+    key.setFrame( frameNum )
+    key.setValue(positions[i][0])
+    TX.append(key)
+    
+    key = hou.Keyframe()
+    key.setFrame( frameNum )
+    key.setValue(positions[i][1])
+    TY.append(key)
+    
+    key = hou.Keyframe()
+    key.setFrame( frameNum )
+    key.setValue(positions[i][2])
+    TZ.append(key)    
+    
+    key = hou.Keyframe()
+    key.setFrame( frameNum )
+    key.setValue(rotations[i][0])
+    RX.append(key)   
+    
+    key = hou.Keyframe()
+    key.setFrame( frameNum )
+    key.setValue(rotations[i][1])
+    RY.append(key)     
+    
+    key = hou.Keyframe()
+    key.setFrame( frameNum )
+    key.setValue(rotations[i][2])
+    RZ.append(key)     
+    
+    
+cam.parm("tx").setKeyframes( TX )    
+cam.parm("ty").setKeyframes( TY )    
+cam.parm("tz").setKeyframes( TZ )    
+
+cam.parm("rx").setKeyframes( RX )    
+cam.parm("ry").setKeyframes( RZ )    
+cam.parm("rz").setKeyframes( RY )    
+#print TX    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+]]></script>
+  </tool>
+
+  <tool name="read_raw_file" label="read raw file" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import struct
+import math
+file = hou.ui.selectFile("","select Raw Height file",pattern="*.raw")
+# print file
+
+bytesArray = []
+
+
+with open(file, "rb") as f:
+    while True:
+        chunk = f.read(2)
+        if chunk:
+            bytesArray.append((struct.unpack(">h",chunk))[0])
+        else:
+            break
+
+            
+print math.sqrt(len(bytesArray))
+# example:
+#for b in bytesArray:
+#    height = 
+#    if  height != 0 :
+#        print height
+
+
+]]></script>
+  </tool>
+
+  <tool name="write_raw_file" label="write raw file" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import struct 
+import math
+import os
+
+def writeRawFile(filePath, height_field, numTiles=1):
+
+    print "write file:", filePath
+    data = ""
+    for v in height_field.allVoxels():
+        val =  hou.hmath.fit(v, minHeight, maxHeight,0.0,1.0)
+        val = int(math.ceil( val * (((2**16)-1) - (2**15))))
+        data += (struct.pack("@h",val))
+        
+    
+    
+    
+    
+    f = open(filePath, "wb")
+    f.write(data)
+    f.close()
+
+def findPrim(baseSop, primName):
+    prims = baseSop.geometry().prims()
+    
+    for i,prim in enumerate(prims):
+        if prim.attribValue("name") == primName:
+            #print "found height prim at prim #", i
+            return prim
+    
+    return -1
+    
+    
+choices = ("no tiles","2 by2", "3 by 3", "4 by 4")
+
+
+tileChoice = hou.ui.selectFromList(choices,default_choices=(0,), exclusive=False)[0]
+
+
+
+baseHeightField = hou.selectedNodes()[0]
+
+heightPrim = findPrim(baseHeightField, 'height')
+print "heightPrim :", heightPrim
+
+flowPrim = findPrim(baseHeightField, 'flow')
+print "flowPrim :", flowPrim
+
+tileNode = baseHeightField.parent().createNode("heightfield_tilesplit")
+tileNode.setInput(0,baseHeightField)
+tileNode.setDisplayFlag(True)
+tileNode.setTemplateFlag(True)
+tileNode.setRenderFlag(True)
+tileNode.moveToGoodPosition()
+    
+
+
+heightField = baseHeightField.geometry().prims()[0]
+
+minHeight = heightField.volumeMin()
+maxHeight = heightField.volumeMax()
+
+print "minHeight :", minHeight
+print "maxHeight :", maxHeight
+
+if tileChoice == 0:
+    filePath = hou.ui.selectFile("","select a file",pattern="*.raw")
+    writeRawFile(filePath, heightField)
+elif tileChoice != 0:    
+    filePath = hou.ui.selectFile("","select a file",pattern="*.raw")
+    tileNode.parm("tilecountx").set( tileChoice+1)
+    tileNode.parm("tilecounty").set( tileChoice+1)    
+    tileNode.parm("voxelpad").set(1)    
+    for i in range(0, (tileChoice+1)**2):
+        print "tile number ",i+1
+        
+        tileNode.parm("tilenum").set(i)
+        heightField = tileNode.geometry().prims()[0]
+        
+        baseName, ext  = os.path.splitext(filePath)
+        print baseName
+        writeRawFile(baseName+ str(i)+ ext, heightField)
+    
+
+]]></script>
+  </tool>
+
+  <tool name="write_raw_file_V2" label="write raw file V2" icon="hicon:/SVGIcons.index?SOP_heightfield_file.svg">
+    <script scriptType="python"><![CDATA[import struct 
+import math
+import os
+
+def writeRawFile(filePath, height_field, minVal, maxVal):
+
+    print "write file:", filePath
+    data = ""
+    for v in height_field.allVoxels():
+        val =  hou.hmath.fit(v, minHeight, maxHeight,0.0,1.0)
+        val = int(math.ceil( val * (((2**16)-1) - (2**15))))
+        data += (struct.pack("@h",val))
+        
+    f = open(filePath, "wb")
+    f.write(data)
+    f.close()
+
+def findPrim(baseSop, primName):
+    prims = baseSop.geometry().prims()
+    
+    for i,prim in enumerate(prims):
+        if prim.attribValue("name") == primName:
+            #print "found height prim at prim #", i
+            return prim
+    
+    return -1
+    
+
+def exportPrim( height_field_prim, num_tiles = 1):
+    if height_field_prim == -1:
+        print "prim not found"
+        return -1
+    print "exporting :",height_field_prim
+    heightField = height_field_prim
+    
+    minVal = heightField.volumeMin()
+    maxVal = heightField.volumeMax()
+    
+    print "minHeight :", minHeight
+    print "maxHeight :", maxHeight
+    
+    if tileChoice == 0:
+        filePath = hou.ui.selectFile("","select a file",pattern="*.raw")
+        writeRawFile(filePath, heightField, minVal, maxVal)
+    elif tileChoice != 0:    
+        filePath = hou.ui.selectFile("","select a file",pattern="*.raw")
+        tileNode.parm("tilecountx").set( tileChoice+1)
+        tileNode.parm("tilecounty").set( tileChoice+1)    
+        tileNode.parm("voxelpad").set(1)    
+        for i in range(0, (tileChoice+1)**2):
+            print "tile number ",i+1
+            
+            tileNode.parm("tilenum").set(i)
+            heightField = tileNode.geometry().prims()[0]
+            
+            baseName, ext  = os.path.splitext(filePath)
+            print baseName
+            writeRawFile(baseName+ str(i)+ ext, heightField,  minVal, maxVal)
+    
+    
+choices = ("no tiles","2 by2", "3 by 3", "4 by 4")
+
+
+tileChoice = hou.ui.selectFromList(choices,default_choices=(0,), exclusive=False)[0]
+
+
+
+baseHeightField = hou.selectedNodes()[0]
+
+
+
+
+
+#print "flowPrim :", flowPrim
+
+tileNode = baseHeightField.parent().createNode("heightfield_tilesplit")
+tileNode.setInput(0,baseHeightField)
+tileNode.setDisplayFlag(True)
+tileNode.setTemplateFlag(True)
+tileNode.setRenderFlag(True)
+tileNode.moveToGoodPosition()
+
+exportPrim(findPrim(baseHeightField, 'height'))
+    
+
+
+
+]]></script>
+  </tool>
+
+  <tool name="octane_ROP_preview" label="Octane Rop Preview" icon="hicon:/SVGIcons.index?BUTTONS_capture.svg">
+    <toolMenuContext name="network">
+      <contextNetType>ROP</contextNetType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[sel = hou.selectedNodes()
+if len(sel) != 0:
+    copiedNodes = hou.copyNodesTo((sel[0],), sel[0].parent())
+    
+    previewRop = copiedNodes[0]
+    previewRop.setName(sel[0].name()+"_preview")
+    previewRop.moveToGoodPosition()
+    previewRop.setColor( hou.Color((255,0,0)))
+    
+    
+    
+    previewRop.parm("HO_overrideCameraRes").set(1)
+    previewRop.parm("HO_overrideResScale").set(2)
+    
+    
+    mainTake = hou.takes.rootTake()
+    preview = mainTake.addChildTake("preview")
+    
+    
+    hou.takes.setCurrentTake(preview)
+    
+    renderTarget = hou.node(sel[0].parm("HO_renderTarget").evalAsString())
+    
+    
+    
+    
+    samplesParms = renderTarget.parmTuple("maxsamples")
+    samplesParms2 = renderTarget.parmTuple("maxsamples2")
+    samplesParms3 = renderTarget.parmTuple("maxsamples3")
+    samplesParms4 = renderTarget.parmTuple("maxsamples4")
+    #print samplesParms[0] 
+    preview.addParmTuple(samplesParms)
+    preview.addParmTuple(samplesParms2)
+    preview.addParmTuple(samplesParms3)
+    preview.addParmTuple(samplesParms4)
+    
+    
+    samplesParms.set((500,))
+    samplesParms2.set((500,))
+    samplesParms3.set((500,))
+    samplesParms4.set((500,))
+    
+    hou.takes.setCurrentTake(mainTake)
+    
+    previewRop.parm("take").set("preview")
+]]></script>
+  </tool>
+
+  <tool name="HtoAE_V2" label="HtoAE_V2" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[# This script exports Houdini objects to Adobe After Effects 8.x
+# A .jsx file will be created
+# You can run it as a script in AE
+# ver 0.01 Andrew V.K.
+
+import toolutils
+import hou 
+import string
+import math
+
+minFrame = 2000
+maxFrame = 0
+
+fileName = ""
+
+if len(hou.selectedNodes()) == 0 :
+    viewer = toolutils.sceneViewer()
+    objsel = viewer.selectObjects("Select objects and press Enter",
+            use_existing_selection=False,
+            allow_multisel = True,
+            quick_select=True,
+            allowed_types = ('cam','hlight','null','geo','subnet'))
+else :
+    objsel = hou.selectedNodes()
+
+for obj in objsel:
+    name = obj.name()
+    objType = obj.type().name()
+    if objType == 'cam':
+
+        fileName = obj.name() + ".jsx"
+        parmsList = ["tx","ty","tz","rx","ry","rz"]
+        
+        for parmString in parmsList:
+            if obj.parm(parmString).keyframes().__len__() != 0:
+                firstKey = obj.parm(parmString).keyframes()[0]
+                lastKey =  obj.parm(parmString).keyframes()[obj.parm(parmString).keyframes().__len__()-1]
+                
+                if firstKey.frame() < minFrame: 
+                
+                    minFrame = firstKey.frame()
+                    
+                if lastKey.frame() > maxFrame: 
+                
+                    maxFrame = lastKey.frame()
+                    
+                
+                
+                
+    #print "FirstFrame -->", minFrame, " --- lastFrame --> ", maxFrame       
+    hou.playbar.setPlaybackRange(minFrame, maxFrame)      
+
+
+dir = hou.expandString('$HIP')
+hip = hou.expandString('$HIPNAME')
+dirpath = dir + '/geo/cam_export'
+fname = hou.ui.selectFile( start_directory = dirpath,
+        default_value = fileName,
+        file_type = hou.fileType.Any,
+        collapse_sequences = False,
+        multiple_select = False,
+        image_chooser   = False)
+if not fname.endswith('.jsx'):
+        fname = fname + '.jsx'
+fp = open(hou.expandString(fname),'w')
+
+fps = hou.fps()
+#duration = hou.expandString('$TLENGTH')
+duration = (float(maxFrame) / hou.fps()) - (float(minFrame-1) / hou.fps())
+
+print "Duration : ", duration * hou.fps()
+fend = string.atoi(hou.expandString('$RFEND'))
+fstart = string.atoi(hou.expandString('$RFSTART'))
+firstCam = 0
+objCamera = []
+objLight = []
+objNull = []
+
+for obj in objsel:
+    name = obj.name().replace("-","_")
+    objType = obj.type().name()
+    if objType == 'cam':
+        resx = obj.parm('resx').eval()
+        resy = obj.parm('resy').eval()
+        aspect = obj.parm('aspect').eval()
+        aperture = obj.parm('aperture').eval()
+        focal = obj.parm('focal').eval()
+        fovx = 2 * math.atan((aperture/2)/focal) 
+        zoom = ((resx/2)/math.tan(fovx/2))
+        if firstCam == 0:
+                objCamera.append('var myItemCollection = app.project.items;\n')
+                objCamera.append('var myComp = myItemCollection.addComp("'+name+'"'+','+`resx`+','+`resy`+','+`aspect`+','+str(duration)+','+`fps`+');\n')
+                objCamera.append('var SceneScaleNull = myComp.layers.addNull();\n')
+                objCamera.append('SceneScaleNull.threeDLayer = true;\n')
+                objCamera.append('SceneScaleNull.name = "Scene Scale";\n')
+                objCamera.append('SceneScaleNull.property("Position").setValue([0.0,0.0,0.0]);\n')
+                objCamera.append('SceneScaleNull.enabled = false;\n')
+                firstCam = 1
+        objCamera.append('var '+name+' = myComp.layers.addCamera("'+name+'",[0,0]);\n')
+        objCamera.append(name+'.autoOrient = AutoOrientType.NO_AUTO_ORIENT;\n')
+        objCamera.append(name+'.property("Zoom").setValue('+`zoom`+');\n') 
+        objCamera.append(name+'.parent = SceneScaleNull;\n')
+    elif objType == 'hlight':
+        lighttype = obj.parm('light_type').eval()
+        intensity = obj.parm('light_intensity').eval()
+        cr = obj.parm('light_colorr').eval()
+        cg = obj.parm('light_colorg').eval()
+        cb = obj.parm('light_colorb').eval()
+        coneangle = obj.parm('coneangle').eval()
+        shadow = obj.parm('shadow_type').eval()
+        objLight.append('var '+name+' = myComp.layers.addLight("'+name+'",[0,0]);\n')
+        objLight.append(name+'.autoOrient = AutoOrientType.NO_AUTO_ORIENT;\n')
+        objLight.append(name+'.property("Intensity").setValue('+`intensity*100`+');\n') 
+        objLight.append(name+'.property("Color").setValue(['+`cr`+','+`cg`+','+`cb`+']);\n') 
+        if shadow > 0:
+                objLight.append(name+'.property("castsShadows").setValue(1);\n') 
+        if lighttype == 1:
+                objLight.append(name+'.property("coneAngle").setValue('+`coneangle`+');\n') 
+        objLight.append(name+'.parent = SceneScaleNull;\n')
+    else:
+        objNull.append('var '+name+' = myComp.layers.addNull();\n')
+        objNull.append(name+'.threeDLayer = true;\n') 
+        objNull.append(name+'.name = "'+name+'";\n')
+        objNull.append(name+'.parent = SceneScaleNull;\n')
+
+if firstCam == 0:
+        fp.write('var myItemCollection = app.project.items;\n')
+        fp.write('var myComp = myItemCollection.addComp("Camera1",640,480,1,%s,%s);\n'%(duration,fps))
+        fp.write('var myCamera = myComp.layers.addCamera("Camera1",[0,0]);\n')
+        fp.write('myCamera.autoOrient = AutoOrientType.NO_AUTO_ORIENT;\n')
+        fp.write('var SceneScaleNull = myComp.layers.addNull();\n')
+        fp.write('SceneScaleNull.threeDLayer = true;\n')
+        fp.write('SceneScaleNull.name = "Scene Scale";\n')
+        fp.write('SceneScaleNull.property("Position").setValue([0.0,0.0,0.0]);\n')
+        fp.write('SceneScaleNull.enabled = false;\n')
+        fp.write('myCamera.parent = SceneScaleNull;\n')
+for x in objCamera:
+   fp.write('%s'%x)
+for x in objLight:
+   fp.write('%s'%x)
+for x in objNull:
+   fp.write('%s'%x)
+
+
+for obj in objsel:
+
+    if obj.isTimeDependent() == False :
+        print "not time dependent -->", obj.name()
+        hou.setFrame(fstart)
+        name = obj.name().replace("-","_")
+        objType = obj.type().name()
+        wtm = obj.worldTransform()
+        objt = wtm.extractTranslates("srt")
+        tx = objt.__getitem__(0)
+        ty = objt.__getitem__(1) * -1
+        tz = objt.__getitem__(2) * -1
+        objr = wtm.extractRotates("srt","zyx")
+        rx = objr.__getitem__(0)
+        ry = objr.__getitem__(1) * -1
+        rz = objr.__getitem__(2) * -1        
+        fp.write('%s.property("X Rotation").setValue(%f);\n'%(name,rx)) 
+        fp.write('%s.property("Y Rotation").setValue(%f);\n'%(name,ry)) 
+        fp.write('%s.property("Z Rotation").setValue(%f);\n'%(name,rz)) 
+        fp.write('%s.property("Position").setValue([%f,%f,%f]);\n'%(name,tx,ty,tz)) 
+    else:   
+        i = fstart
+        while i <= fend:
+            hou.setFrame(i)
+            ftime = hou.frameToTime(i)
+            name = obj.name().replace("-","_")
+            objType = obj.type().name()
+            wtm = obj.worldTransform()
+            objt = wtm.extractTranslates("srt")
+            tx = objt.__getitem__(0)
+            ty = objt.__getitem__(1) * -1
+            tz = objt.__getitem__(2) * -1
+            objr = wtm.extractRotates("srt","zyx")
+            rx = objr.__getitem__(0)
+            ry = objr.__getitem__(1) * -1
+            rz = objr.__getitem__(2) * -1
+            fp.write('%s.property("X Rotation").setValueAtTime(%f,%f);\n'%(name,ftime,rx)) 
+            fp.write('%s.property("Y Rotation").setValueAtTime(%f,%f);\n'%(name,ftime,ry)) 
+            fp.write('%s.property("Z Rotation").setValueAtTime(%f,%f);\n'%(name,ftime,rz)) 
+            fp.write('%s.property("Position").setValueAtTime(%f,[%f,%f,%f]);\n'%(name,ftime,tx,ty,tz)) 
+            if (objType == 'cam') and (len(obj.parm('focal').keyframes()) != 0):
+                resx = obj.parm('resx').eval()
+                resy = obj.parm('resy').eval()
+                aspect = obj.parm('aspect').eval()
+                aperture = obj.parm('aperture').eval()
+                focal = obj.parm('focal').eval()
+                fovx = 2 * math.atan((aperture/2)/focal) 
+                zoom = ((resx/2)/math.tan(fovx/2))
+                fp.write('%s.property("Zoom").setValueAtTime(%f,%f);\n'%(name,ftime,zoom)) 
+            if objType == 'hlight':
+                if len(obj.parm('light_intensity').keyframes()) != 0:
+                   intensity = obj.parm('light_intensity').eval()
+                   fp.write('%s.property("Intensity").setValueAtTime(%f,%f);\n'%(name,ftime,intensity*100)) 
+                if len(obj.parm('coneangle').keyframes()) != 0:
+                   coneangle = obj.parm('coneangle').eval()
+                   fp.write('%s.property("coneAngle").setValueAtTime(%f,%f);\n'%(name,ftime,coneangle)) 
+                kr = len(obj.parm('light_colorr').keyframes())
+                kg = len(obj.parm('light_colorg').keyframes())
+                kb = len(obj.parm('light_colorb').keyframes())
+                if (kr != 0) or (kg != 0) or (kb != 0):
+                   cr = obj.parm('light_colorr').eval()
+                   cg = obj.parm('light_colorg').eval()
+                   cb = obj.parm('light_colorb').eval()
+                   fp.write('%s.property("Color").setValueAtTime(%f,[%f,%f,%f]);\n'%(name,ftime,cr,cg,cb)) 
+            if (objType == 'geo') or (objType == 'null') or (objType == 'subnet'):
+                objs = wtm.extractScales("srt")
+                sx = objs.__getitem__(0)
+                sy = objs.__getitem__(1)
+                sz = objs.__getitem__(2)
+                fp.write('%s.property("Scale").setValueAtTime(%f,[%f,%f,%f]);\n'%(name,ftime,sx,sy,sz)) 
+                
+            i = i + 1
+fp.close()
+hou.setFrame(fstart)
+        ]]></script>
+  </tool>
+
+  <tool name="HtoAE_V3" label="HtoAE V3" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import json
+import math
+import os
+
+### functions
+def isZoomTimeDependent(cam):
+    parmList = [ 'focal', 'aperture']
+    
+    for parm in parmList:
+        if cam.parm(parm).isTimeDependent():
+            return True
+            
+    return False
+
+def getCamZoomAtFrame(cam, frame=1):
+    resx = cam.parm('resx').evalAtFrame(frame)
+    resy = cam.parm('resy').evalAtFrame(frame)
+    aspect = cam.parm('aspect').evalAtFrame(frame)
+    aperture = cam.parm('aperture').evalAtFrame(frame)
+    focal = cam.parm('focal').evalAtFrame(frame)
+    fovx = 2 * math.atan((aperture/2)/focal) 
+    zoom = ((resx/2)/math.tan(fovx/2)) 
+    
+    return zoom
+
+def getTransformsAtFrame(obj, frame=1):
+    hou.setFrame(frame)
+    name = obj.name()
+    objType = obj.type().name()
+    wtm = obj.worldTransform()
+    objt = wtm.extractTranslates("srt")
+    tx = objt.__getitem__(0)
+    ty = objt.__getitem__(1) * -1
+    tz = objt.__getitem__(2) * -1
+    objr = wtm.extractRotates("srt","zyx")
+    rx = objr.__getitem__(0)
+    ry = objr.__getitem__(1) * -1
+    rz = objr.__getitem__(2) * -1
+    
+    return([tx,ty,tz], [rx,ry,rz])
+        
+        
+### actual code 
+
+sel = hou.selectedNodes()
+
+tStart = int(hou.expandString('$RFSTART'))
+tEnd = int(hou.expandString('$RFEND'))
+
+nodes = {}
+
+cam = None
+
+for node in sel:
+    if node.type().name() == 'cam':
+        cam = node
+        break
+
+        
+### file selection 
+dirPath = hou.expandString('$HIP')
+fileName = hou.ui.selectFile( start_directory = dirPath,
+        default_value = "%s_export.h2ae" % (cam.name()),
+        file_type = hou.fileType.Any,
+        collapse_sequences = False,
+        multiple_select = False,
+        image_chooser   = False)
+        
+print fileName
+
+data = {}
+compInfos = {}
+compInfos["name"] = cam.name()
+compInfos["resx"] = cam.parm('resx').eval()
+compInfos["resy"] = cam.parm('resy').eval()    
+compInfos["fps"] = hou.fps()
+compInfos["fStart"] = hou.expandString('$RFSTART')   
+compInfos["fEnd"] = hou.expandString('$RFEND')
+
+data["compInfos"] = compInfos
+
+for node in sel:
+
+    
+    infos = {}
+    if node.type().name() == 'cam' :
+    
+        camInfos = {}
+        if not isZoomTimeDependent(node):
+            camInfos["zoom"] = [getCamZoomAtFrame(node)]
+            infos["camInfos"] = camInfos
+            
+        else:
+            zoom = []
+            for i in range(tStart, tEnd+1):
+                zoom.append(getCamZoomAtFrame(node,i))
+            camInfos["zoom"] = zoom
+            infos["camInfos"] = camInfos
+        
+   
+        
+    positions = []
+    rotations = []    
+    
+    if node.isTimeDependent() :
+        for i in range(tStart, tEnd+1):
+            pos, rot = getTransformsAtFrame(node,i)
+            positions.append(pos)
+            rotations.append(rot)
+    else:
+        pos, rot = getTransformsAtFrame(node)
+        positions.append(pos)
+        rotations.append(rot)        
+        
+    infos["positions"] = positions 
+    infos["rotations"] = rotations
+    nodes[node.name()] = infos
+
+data["layers"] = nodes
+    
+
+    
+    
+jsonData = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+# jsonData = json.dumps(nodes)
+
+with open(fileName,'w') as f:
+    #json.dump(data,f, sort_keys=True, indent=4, separators=(',', ': '))
+    json.dump(data, f)
+
+print 'just written a file at : ', fileName
+
+
+]]></script>
+  </tool>
+
+  <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.633/houdini/toolbar\ShelfDefinitions.shelf">
+    <addMemberToolshelf name="octane" inPosition="16"/>
+    <addMemberToolshelf name="gui2one" inPosition="17"/>
   </shelfSetEdit>
 </shelfDocument>
