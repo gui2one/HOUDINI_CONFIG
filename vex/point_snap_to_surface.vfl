@@ -1,0 +1,9 @@
+// don t forget to create maxDist parameter 
+// by pressing the button to the right
+
+int hitPrim;
+vector uv;
+float maxDist = chf("max_dist");
+float dist = xyzdist(1, @P,hitPrim,uv,maxDist);
+vector pos = primuv(1,"P", hitPrim, uv);
+@P = pos;
