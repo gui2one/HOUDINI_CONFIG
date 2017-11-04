@@ -1,6 +1,13 @@
 ### begin functions
+def findNodeByType(parent, type):
+    for child in parent.children():
+        if child.type().name() == type:
+            return child
+
+
 def initFractureSim():
 
+    global mergeConstraintsPath
     print "init fracture simulation ..."
     root = hou.node('/obj')
     
@@ -10,9 +17,6 @@ def initFractureSim():
     hou.appendSessionModuleSource("fractureSim = '%s'" % (dopnetNode.path()))
     
     rigidBodySolver = dopnetNode.createNode('rigidbodysolver')
-    rbdpackedNode = dopnetNode.createNode('rbdpackedobject')
-    rbdpackedNode.setName(selection.name(), unique_name=True)
-    
     mergeObjectsNode = dopnetNode.createNode('merge')
     
     outputNode = hou.node(dopnetNode.path() + "/output")
@@ -28,14 +32,21 @@ def initFractureSim():
     ## forces
     gravity = dopnetNode.createNode('gravity')
     
+
+    ### build constraints
+    dopConstraints = dopnetNode.createNode('dop_build_glue_constraints')
+    dopConstraints.parm('soppath').set(mergeConstraintsPath)
     
+
+
     ### wire all the nodes
-    outputNode.setInput(0,gravity)
+    outputNode.setInput(0, dopConstraints)
+    dopConstraints.setInput(0, gravity)
     gravity.setInput(0,mergeSolvers)
     mergeSolvers.setInput(0,staticSolver)
     mergeSolvers.setInput(1,rigidBodySolver)
     rigidBodySolver.setInput(0,mergeObjectsNode)
-    mergeObjectsNode.setInput(0,rbdpackedNode)    
+    
     
     staticSolver.setInput(0,mergeStatics)
     mergeStatics.setInput(0,ground)    
@@ -48,6 +59,11 @@ def initFractureSim():
     dopnetNode.addEventCallback((hou.nodeEventType.BeingDeleted,), deleteFractureSimVariable)  
 
 def initConstraintsSop():
+    print 'init merge constraints sop'
+    global curConstraintsPath
+    global selection
+    global mergeConstraintsPath
+    print 'curConstraintsPath -->', curConstraintsPath
     root = hou.node('/obj')
     
     sop = root.createNode('geo')
@@ -64,13 +80,21 @@ def initConstraintsSop():
     OUT.setName('OUT', unique_name=True)
 
     merge = sop.createNode('merge')
-    objectMerge = sop.createNode('object_merge')
+    # objectMerge = sop.createNode('object_merge')
+    # objectMerge.setName( selection.name() + '_constraints', unique_name = True)
+    # objectMerge.parm('objpath1').set(curConstraintsPath)
 
     ### link nodes
     OUT.setInput(0,merge)
-    merge.setInput(0, objectMerge)
+    # merge.setInput(0, objectMerge)
 
     sop.layoutChildren()
+
+    OUT.setDisplayFlag(1)
+    OUT.setRenderFlag(1)
+    OUT.setTemplateFlag(1)
+
+    mergeConstraintsPath = OUT.path()
 
     
 def constraintsSopRenamed(**kwargs) :
@@ -80,6 +104,7 @@ def constraintsSopRenamed(**kwargs) :
     pass
     
 def fractureGeometry(selection):
+    global curConstraintsPath
     displayNode = selection.displayNode()
     shatter = selection.createNode('gui2one_shatter')
     shatter.setInput(0,displayNode)
@@ -89,6 +114,26 @@ def fractureGeometry(selection):
     constraints.parm('dop_object_name').set(selection.name())
     constraints.setInput(0,shatter)
     constraints.moveToGoodPosition()
+
+    curConstraintsPath = constraints.path()
+
+    null = selection.createNode('null')    
+    null.setName('OUT', unique_name=True)
+    null.setInput(0, shatter)
+    null.moveToGoodPosition()
+
+    dopImport = selection.createNode('dopimport')
+    dopImport.parm('doppath').set(hou.session.fractureSim)
+    dopImport.parm('objpattern').set(selection.name())
+    dopImport.parm('importstyle').set(2) ### fetch packed geometry from dopnet
+    
+    dopImport.setDisplayFlag(1)
+    dopImport.setRenderFlag(1)
+    dopImport.setTemplateFlag(1)
+
+    dopImport.setInput(0,null)
+    dopImport.moveToGoodPosition()
+    
     
 def dopRename(**kwargs):
     nodePath =  kwargs['node'].path()
@@ -142,12 +187,48 @@ def deleteMergeConstraintsSopVariable(**kwargs):
     except:
         print "what ?"            
 
+def addSelectionConstraints():
+    global selection
+    global curConstraintsPath
+    cNode = hou.node(hou.session.mergeConstraintsSop)
+    objMerge = cNode.createNode("object_merge")
+    objMerge.setName(selection.name(), unique_name = True)
+    objMerge.parm("objpath1").set(curConstraintsPath)
+    objMerge.parm('xformpath').set('.')
+    ###find OUT null sop
+    merge = hou.node(cNode.path()+'/merge1')
+    merge.setInput( len(merge.inputs() ), objMerge)
+
+    cNode.layoutChildren()
+    
+def addSelectionRBDs():
+    
+    global selection
+    fractureSim = hou.node(hou.session.fractureSim)
+
+    rbdpackedNode = fractureSim.createNode('rbdpackedobject')
+    rbdpackedNode.setName(selection.name(), unique_name=True)
+    rbdpackedNode.parm('soppath').set(selection.path() + '/OUT')
+    rbdpackedNode.parm('usetransform').set(1)
+    rbdpackedNode.moveToGoodPosition()
+
+    rbdSolver = findNodeByType(fractureSim, 'rigidbodysolver')
+    mergeRBDs = rbdSolver.inputs()[0]
+    
+    mergeRBDs.setInput( len(mergeRBDs.inputs()), rbdpackedNode)
+    rbdpackedNode.moveToGoodPosition()
+
+
+
 ###
 ### end functions         
   
 
 
 ### begin script     
+
+curConstraintsPath = ''
+mergeConstraintsPath = ''
 
 if len(hou.selectedNodes()) > 0:
     selection =  hou.selectedNodes()[0] 
@@ -157,21 +238,25 @@ else:
 
 if selection :    
     try :
-        print hou.session.fractureSim
-        if hou.session.fractureSim == None:
-            raise(AttributeError)
-    except AttributeError:
-        print 'no variable with this name in hou.session'
-        fractureGeometry(selection)
-        initFractureSim()
-        
-    try :
         print hou.session.mergeConstraintsSop
         if hou.session.mergeConstraintsSop == None:
             raise(AttributeError)
     except AttributeError:
         print 'no variable with this name in hou.session'
         initConstraintsSop()            
+
+    try :
+        print hou.session.fractureSim
+        if hou.session.fractureSim == None:
+            raise(AttributeError)
+    except AttributeError:
+        print 'no variable with this name in hou.session'        
+        initFractureSim()
+
+    fractureGeometry(selection)
+    addSelectionConstraints()
+    addSelectionRBDs()
+        
       
 
 
