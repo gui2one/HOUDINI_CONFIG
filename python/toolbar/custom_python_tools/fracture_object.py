@@ -5,9 +5,7 @@ TOOLS_PATH = hou.getenv('CUSTOM_PYTHON_TOOLS')
 sys.path.append(TOOLS_PATH)
 
 from gui2one_utils import gui2one_utils
-# print "--------------------------"
-# print dir(gui2one_utils)
-# print "::::::::::::::::::::::::::"
+
 reload(gui2one_utils)
 ### begin functions
 def findNodeByType(parent, type):
