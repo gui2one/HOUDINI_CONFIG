@@ -1,3 +1,14 @@
+import sys
+import os
+
+TOOLS_PATH = hou.getenv('CUSTOM_PYTHON_TOOLS')
+sys.path.append(TOOLS_PATH)
+
+from gui2one_utils import gui2one_utils
+# print "--------------------------"
+# print dir(gui2one_utils)
+# print "::::::::::::::::::::::::::"
+reload(gui2one_utils)
 ### begin functions
 def findNodeByType(parent, type):
     for child in parent.children():
@@ -56,7 +67,7 @@ def initFractureSim():
     ### add event callbacks
     
     dopnetNode.addEventCallback((hou.nodeEventType.NameChanged,), dopRename)
-    dopnetNode.addEventCallback((hou.nodeEventType.BeingDeleted,), deleteFractureSimVariable)  
+    dopnetNode.addEventCallback((hou.nodeEventType.BeingDeleted,), onDeleteFractureSim)  
 
 def initConstraintsSop():
     print 'init merge constraints sop'
@@ -72,7 +83,7 @@ def initConstraintsSop():
     sop.moveToGoodPosition()
     hou.appendSessionModuleSource("mergeConstraintsSop = '%s'" % (sop.path()))
     sop.addEventCallback((hou.nodeEventType.NameChanged,), constraintsSopRenamed)
-    sop.addEventCallback((hou.nodeEventType.BeingDeleted,), deleteMergeConstraintsSopVariable)  
+    sop.addEventCallback((hou.nodeEventType.BeingDeleted,), onDeleteMergeConstraintsSop)  
 
 
     # adding node to merge constraints
@@ -95,12 +106,12 @@ def initConstraintsSop():
     OUT.setTemplateFlag(1)
 
     mergeConstraintsPath = OUT.path()
-
     
+
 def constraintsSopRenamed(**kwargs) :
     # print "renamed constraints sop"
     
-    updateSessionVariable('mergeConstraintsSop', kwargs['node'].path()) 
+    gui2one_utils.updateSessionVariable('mergeConstraintsSop', kwargs['node'].path()) 
     pass
     
 def fractureGeometry(selection):
@@ -138,54 +149,13 @@ def fractureGeometry(selection):
 def dopRename(**kwargs):
     nodePath =  kwargs['node'].path()
     # print ';;;;;;;;;;;;;;;;;;',nodePath
-    updateSessionVariable('fractureSim', nodePath)    
-    
-def updateSessionVariable(var_name, node_path):
-    curSource = hou.sessionModuleSource()
-    lines = curSource.split("\n")
-    
-    for i,line in enumerate(lines):
-        if line.split('=')[0].strip(' ') == var_name:
-            line = "%s = '%s'" % (var_name, node_path)
-            lines[i] = line
-    data = '\n'.join(lines)
-    # print data
+    gui2one_utils.updateSessionVariable('fractureSim', nodePath)   
 
-    hou.setSessionModuleSource(data)
-    
-def deleteFractureSimVariable(**kwargs):
-    curSource = hou.sessionModuleSource()
-    lines = curSource.split("\n")
-    
-    for i,line in enumerate(lines):
-        if line.split('=')[0].strip(' ') == 'fractureSim':
-            del lines[i]
-            break
-    data = '\n'.join(lines)
-    # print data
-
-    hou.setSessionModuleSource(data)  
-    try:
-        del hou.session.fractureSim
-    except:
-        print "what ?"    
+def onDeleteFractureSim(**kwargs):
+    gui2one_utils.deleteSessionVariable('fractureSim')
         
-def deleteMergeConstraintsSopVariable(**kwargs):
-    curSource = hou.sessionModuleSource()
-    lines = curSource.split("\n")
-    
-    for i,line in enumerate(lines):
-        if line.split('=')[0].strip(' ') == 'mergeConstraintsSop':
-            del lines[i]
-            break
-    data = '\n'.join(lines)
-    # print data
-
-    hou.setSessionModuleSource(data)  
-    try:
-        del hou.session.mergeConstraintsSop
-    except:
-        print "what ?"            
+def onDeleteMergeConstraintsSop(**kwargs):
+    gui2one_utils.deleteSessionVariable('mergeConstraintsSop')
 
 def addSelectionConstraints():
     global selection
