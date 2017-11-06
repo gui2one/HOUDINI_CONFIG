@@ -1,8 +1,16 @@
 import hou
 
+
+def findNodeByType(parent, type):
+    for child in parent.children():
+        if child.type().name() == type:
+            return child
+    
+    return None
+
 def updateSessionVariable(var_name, node_path):
 
-    import hou
+    
     curSource = hou.sessionModuleSource()
     lines = curSource.split("\n")
 
@@ -17,7 +25,7 @@ def updateSessionVariable(var_name, node_path):
 
 
 def deleteSessionVariable(var_name):
-    print 'utils function : delete variable'
+    # print 'utils function : delete variable'
     curSource = hou.sessionModuleSource()
     lines = curSource.split("\n")
 
@@ -35,5 +43,5 @@ def deleteSessionVariable(var_name):
     try:
         exec(cmdString)
     except:
-        print 'unable to delete variable from memory'
+        print 'unable to delete variable "%s"from memory' % (var_name)
 

@@ -3,10 +3,9 @@ import os
 
 TOOLS_PATH = hou.getenv('CUSTOM_PYTHON_TOOLS')
 sys.path.append(TOOLS_PATH)
-
 from gui2one_utils import gui2one_utils
-
 reload(gui2one_utils)
+
 ### begin functions
 def findNodeByType(parent, type):
     for child in parent.children():
@@ -64,7 +63,7 @@ def initFractureSim():
     dopnetNode.layoutChildren()
     ### add event callbacks
     
-    dopnetNode.addEventCallback((hou.nodeEventType.NameChanged,), dopRename)
+    dopnetNode.addEventCallback((hou.nodeEventType.NameChanged,), dopRenamed)
     dopnetNode.addEventCallback((hou.nodeEventType.BeingDeleted,), onDeleteFractureSim)  
 
 def initConstraintsSop():
@@ -72,7 +71,7 @@ def initConstraintsSop():
     global curConstraintsPath
     global selection
     global mergeConstraintsPath
-    print 'curConstraintsPath -->', curConstraintsPath
+    # print 'curConstraintsPath -->', curConstraintsPath
     root = hou.node('/obj')
     
     sop = root.createNode('geo')
@@ -105,6 +104,43 @@ def initConstraintsSop():
 
     mergeConstraintsPath = OUT.path()
     
+def initMergeSimGeo():
+    # print "INIT MERGE SIM GEO"
+    global selection
+
+    root = hou.node("/obj")
+    mergeSimGeo = root.createNode("geo")
+    mergeSimGeo.setName('merge_sim_geo', unique_name=True)
+    mergeSimGeo.moveToGoodPosition()
+    mergeSimGeo.children()[0].destroy() ## delete default file node
+
+    hou.appendSessionModuleSource("mergeSimGeo = '%s'" % (mergeSimGeo.path()))
+
+    mergeSimGeo.addEventCallback((hou.nodeEventType.NameChanged,), onMergeSimGeoRenamed)
+    mergeSimGeo.addEventCallback((hou.nodeEventType.BeingDeleted,), onDeleteMergeSimGeo)
+
+    null = mergeSimGeo.createNode("null")
+    null.setName('OUT', unique_name=True)
+
+    merge = mergeSimGeo.createNode('merge')
+
+    
+
+    dopImport = findNodeByType(selection,'dopimport')
+
+
+    null.setInput(0, merge)
+
+
+    mergeSimGeo.layoutChildren()
+    
+
+
+def onDeleteMergeSimGeo(**kwargs):
+    gui2one_utils.deleteSessionVariable('mergeSimGeo')
+
+def onMergeSimGeoRenamed(**kwargs):
+    gui2one_utils.updateSessionVariable('mergeSimGeo', kwargs['node'].path())
 
 def constraintsSopRenamed(**kwargs) :
     # print "renamed constraints sop"
@@ -144,7 +180,7 @@ def fractureGeometry(selection):
     dopImport.moveToGoodPosition()
     
     
-def dopRename(**kwargs):
+def dopRenamed(**kwargs):
     nodePath =  kwargs['node'].path()
     # print ';;;;;;;;;;;;;;;;;;',nodePath
     gui2one_utils.updateSessionVariable('fractureSim', nodePath)   
@@ -186,7 +222,22 @@ def addSelectionRBDs():
     mergeRBDs.setInput( len(mergeRBDs.inputs()), rbdpackedNode)
     rbdpackedNode.moveToGoodPosition()
 
+def addSelectionGeo():
+    global selection
+    mergeSimGeo = hou.node(hou.session.mergeSimGeo)
+    
+    objMerge = mergeSimGeo.createNode('object_merge')
+    objMerge.setName(selection.name(), unique_name=True)
+    dopImport = findNodeByType(selection, 'dopimport')
+    
+    
+    objMerge.parm('objpath1').set(dopImport.path())
+    objMerge.parm('xformpath').set(".")
 
+    merge = hou.node(mergeSimGeo.path() + '/merge1')
+    merge.setInput( len(merge.inputs()), objMerge)
+
+    pass
 
 ###
 ### end functions         
@@ -206,24 +257,34 @@ else:
 
 if selection :    
     try :
-        print hou.session.mergeConstraintsSop
+        # print hou.session.mergeConstraintsSop
         if hou.session.mergeConstraintsSop == None:
             raise(AttributeError)
     except AttributeError:
-        print 'no variable with this name in hou.session'
+        # print 'no variable with this name in hou.session'
         initConstraintsSop()            
 
     try :
-        print hou.session.fractureSim
+        # print hou.session.fractureSim
         if hou.session.fractureSim == None:
             raise(AttributeError)
     except AttributeError:
-        print 'no variable with this name in hou.session'        
+        # print 'no variable with this name in hou.session'        
         initFractureSim()
 
     fractureGeometry(selection)
     addSelectionConstraints()
     addSelectionRBDs()
+
+    try:
+        # print hou.session.fractureSim
+        if hou.session.mergeSimGeo == None:
+            raise(AttributeError)
+    except AttributeError:
+        print '------------> no mergeSimGeo variable '
+        initMergeSimGeo()
+
+    addSelectionGeo()
         
       
 

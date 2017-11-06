@@ -32,7 +32,7 @@ if len(selection.nodes()) == 0:
 # Create Source
 #
 # Create a new SOP container with the merged geometry
-container = soptoolutils.createSopNodeContainer(scene_viewer, "debris_source")
+container = soptoolutils.createSopNodeContainer(scene_viewer, "dust_source")
 merge_sop = selection.mergedNode(container, nodetypename, True, True)
 # Turn back on the display flag for merged nodes
 for sop in selection.nodes():
@@ -47,9 +47,9 @@ unpack_sop.setFirstInput(merge_sop)
 unpack_sop.moveToGoodPosition()
 
 sort = container.createNode('sort')
-sort.parm('primsort').set(5) ## random primtive sort
+sort.parm('primsort').set(5)  # random primtive sort
 sort.setFirstInput(unpack_sop)
-sort.setColor(hou.Color(0.9,0.9,0.0))
+sort.setColor(hou.Color(0.9, 0.9, 0.0))
 
 attribute_sop = container.createNode('attribute', 'remove_attributes')
 attribute_sop.parm('ptdel').set('* ^name')
@@ -59,21 +59,14 @@ attribute_sop.parm('dtldel').set('*')
 attribute_sop.setFirstInput(sort)
 attribute_sop.moveToGoodPosition()
 
-attribpromote_sop = container.createNode('attribpromote')
-attribpromote_sop.parm('inname').set('name')
 
 
 
-trail_sop = container.createNode('trail', 'compute_velocity')
-trail_sop.parm('result').set('velocity')
-trail_sop.setFirstInput(attribute_sop)
-trail_sop.moveToGoodPosition()
+debrissource_sop = container.createNode('gui2one_debris_source')
+debrissource_sop.setFirstInput(attribute_sop)
+debrissource_sop.parm('source_type').set(1) ### type dust
 
-debrissource_sop = container.createNode('debrissource')
-debrissource_sop.setFirstInput(trail_sop)
-debrissource_sop.parm('edges').set(1000)
-debrissource_sop.parm('lifespan').set(0.2)
-debrissource_sop.moveToGoodPosition()
+
 
 null_sop = container.createNode('null', 'OUT')
 null_sop.setFirstInput(debrissource_sop)
@@ -87,68 +80,60 @@ container.layoutChildren()
 #
 # Create Simulation
 #
-dopnet = container.parent().createNode('dopnet', 'debris_sim')
+
+## add dust limits asset
+dust_limits = container.parent().createNode('dust_limits')
+
+
+dopnet = container.parent().createNode('dopnet', 'dust_sim')
 dopnet.moveToGoodPosition()
+gasresizefluiddynamic = dopnet.createNode('gasresizefluiddynamic')
+gasresizefluiddynamic.parm('delay_frames').set(10)
 
-popobject = dopnet.createNode('popobject')
-popobject.parm('friction').set(0.8)
-popobject.parm('dynamicfriction').set(0.25)
-popobject.moveToGoodPosition()
+gasdissipate = dopnet.createNode('gasdissipate')
+gasdissipate.parm('diffusion').set(0.2)
+gasdissipate.parm('evaporation').set(0.2)
+gasdissipate.parm('subtractovertime').set(1)
+gasdissipate.parm('subtractrate').set(0.05)
 
-popsource = dopnet.createNode('popsource')
-popsource.parm('emittype').set('point')
-popsource.parm('soppath').set(null_sop.path())
-popsource.parm('inheritattrib').set('* ^Cd')
-popsource.parm('inheritvel').set(0.56)
-popsource.moveToGoodPosition()
+gasturbulence = dopnet.createNode('gasturbulence')
+mergeVelUpdate = dopnet.createNode('merge')
+mergeVelUpdate.setNextInput(gasdissipate)
+mergeVelUpdate.setNextInput(gasturbulence)
 
-popstream = dopnet.createNode('popstream')
-popstream.setFirstInput(popsource)
-popstream.moveToGoodPosition()
+smokeobject = dopnet.createNode('smokeobject')
+smokeobject.setName('dust', unique_name=True)
+## set expressions
+smokeobject.parm('sizex').setExpression('ch("../../%s/sizex")' % (dust_limits.name()))
+smokeobject.parm('sizey').setExpression('ch("../../%s/sizey")'% (dust_limits.name()))
+smokeobject.parm('sizez').setExpression('ch("../../%s/sizez")'% (dust_limits.name()))
 
-popreplicate = dopnet.createNode('popreplicate')
-popreplicate.parm('constantrate').set(100)
-popreplicate.parm('killorig').set(True)
-popreplicate.parm('shape').set('point')
-popreplicate.parm('donoise').set(True)
-popreplicate.parm('initvel').set('add')
-popreplicate.parm('varx').set(0.7)
-popreplicate.parm('vary').set(0.7)
-popreplicate.parm('varz').set(0.7)
-popreplicate.setFirstInput(popstream)
-popreplicate.moveToGoodPosition()
-popreplicate.bypass(1)
+smokeobject.parm('tx').setExpression('ch("../../%s/t2x")'% (dust_limits.name()))
+smokeobject.parm('ty').setExpression('ch("../../%s/t2y")'% (dust_limits.name()))
+smokeobject.parm('tz').setExpression('ch("../../%s/t2z")'% (dust_limits.name()))
 
-popinteract = dopnet.createNode('popinteract')
-popinteract.parm('positionforce').set(0.005)
-popinteract.parm('falloffradius').set(0.44)
-popinteract.setFirstInput(popreplicate)
-popinteract.moveToGoodPosition()
+sourcevolume = dopnet.createNode('sourcevolume')
+sourcevolume.parm('source_path').set(null_sop.path())
+sourcevolume.parm('velocity_merge').set(1) ## add
+sourcevolume.parm('normalizevel').set(0) ## uncheck normalize vel
+sourcevolume.parm('scale_source').set(0.2)
+sourcevolume.parm('scale_temperature').set(0.1)
+sourcevolume.parm('scale_velocity').set(0.1)
 
-popdrag = dopnet.createNode('popdrag')
-popdrag.parm('airresist').set(0.01)
-popdrag.setFirstInput(popinteract)
-popdrag.moveToGoodPosition()
+smokesolver = dopnet.createNode('smokesolver')
+smokesolver.setFirstInput(smokeobject)
+smokesolver.setInput(1, gasresizefluiddynamic)
+smokesolver.setInput(2, mergeVelUpdate)
+smokesolver.setInput(4, sourcevolume)
 
-popforce = dopnet.createNode('popforce')
-popforce.parm('forcey').set(-9.80665)
-popforce.setFirstInput(popdrag)
-popforce.moveToGoodPosition()
 
-popsolver = dopnet.createNode('popsolver')
-popsolver.setFirstInput(popobject)
-popsolver.setNextInput(popforce)
-popsolver.setNextInput(popsource)
-popsolver.moveToGoodPosition()
 
-popsolver.setDisplayFlag(True)
-dopnet.setDisplayFlag(False)
 
 ## create ground plane and static solver
 ground = dopnet.createNode('groundplane')
 staticobject = dopnet.createNode('staticobject')
 staticobject.setName('fracture_sim_geo', unique_name=True)
-staticobject.parm('soppath').set( hou.session.mergeSimGeo )
+staticobject.parm('soppath').set(hou.session.mergeSimGeo)
 staticobject.parm('animategeo').set(1)
 staticobject.parm('usetransform').set(1)
 staticobject.parm('bullet_groupconnected').set(1)
@@ -160,19 +145,20 @@ staticSolver = dopnet.createNode('staticsolver')
 mergeStatics = dopnet.createNode('merge')
 
 
-
 mergeSolvers = dopnet.createNode('merge')
 
-mergeSolvers.setNextInput( staticSolver)
-mergeSolvers.setNextInput(popsolver)
+mergeSolvers.setNextInput(staticSolver)
+mergeSolvers.setNextInput(smokesolver)
 staticSolver.setInput(0, mergeStatics)
 mergeStatics.setNextInput(ground)
 mergeStatics.setNextInput(staticobject)
 
-output = gui2one_utils.findNodeByType(dopnet,'output')
+output = gui2one_utils.findNodeByType(dopnet, 'output')
+
+
 
 if output != None:
-    output.setInput(0,mergeSolvers)
+    output.setInput(0, mergeSolvers)
 else:
     output = dopnet.createNode('output')
     output.setInput(0, mergeSolvers)
@@ -180,24 +166,34 @@ else:
 output.setDisplayFlag(1)
 
 dopnet.layoutChildren()
-
-
-
-
+dopnet.setDisplayFlag(False)
 
 #
 # Create Simulation
 #
-debris = container.parent().createNode('geo', 'debris', False)
+
+
+
+
+
+debris = container.parent().createNode('geo', 'dust', False)
 debris.moveToGoodPosition()
 
-dopimport = debris.createNode('dopimport')
+dopimport = debris.createNode('dopimportfield')
 dopimport.parm('doppath').set(dopnet.path())
-dopimport.parm('importstyle').set('fetch')
+dopimport.parm('dopnode').set(dopnet.path()+"/dust")
+dopimport.parm('fields').set(3)
+
+dopimport.parm('fieldname1').set('density')
+dopimport.parm('fieldname2').set('vel')
+dopimport.parm('visible2').set(3) ## invisible
+dopimport.parm('fieldname3').set('temperature')
+dopimport.parm('visible3').set(3) ## invisible
+# dopimport.parm("presets").set(0)
 dopimport.moveToGoodPosition()
 
 # Change our viewer to the dop network
-scene_viewer.setPwd(popsolver)
-popsolver.setCurrent(True, True)
-toolutils.homeToSelectionNetworkEditorsFor(popsolver)
+
+
+
 scene_viewer.enterCurrentNodeState()

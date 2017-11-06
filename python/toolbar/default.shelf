@@ -1535,11 +1535,12 @@ print 'just written a file at : ', fileName
 
   <toolshelf name="destruction" label="Destruction">
     <memberTool name="fracture_object"/>
+    <memberTool name="debris_sim"/>
+    <memberTool name="dust_sim"/>
   </toolshelf>
 
   <tool name="fracture_object" label="Fracture Object" icon="hicon:/SVGIcons.index?SOP_shatter.svg">
     <script scriptType="python"><![CDATA[import os
-
 rootPath = hou.getenv('CUSTOM_PYTHON_TOOLS')
 execfile(os.path.join(rootPath, './fracture_object.py'))]]></script>
   </tool>
@@ -1684,6 +1685,22 @@ scene_viewer.setPwd(popsolver)
 popsolver.setCurrent(True, True)
 toolutils.homeToSelectionNetworkEditorsFor(popsolver)
 scene_viewer.enterCurrentNodeState()]]></script>
+  </tool>
+
+  <tool name="debris_sim" label="Debris Sim" icon="SHELF_debris">
+    <script scriptType="python"><![CDATA[import os
+
+rootPath = hou.getenv('CUSTOM_PYTHON_TOOLS')
+execfile(os.path.join(rootPath, './debris_sim.py'),{'hou' : hou }, {'kwargs': {'pane':None }} )
+]]></script>
+  </tool>
+
+  <tool name="dust_sim" label="Dust Sim" icon="hicon:/SVGIcons.index?DOP_smokeobject.svg">
+    <script scriptType="python"><![CDATA[import os
+
+rootPath = hou.getenv('CUSTOM_PYTHON_TOOLS')
+execfile(os.path.join(rootPath, './dust_sim.py'),{'hou' : hou }, {'kwargs': {'pane':None }} )
+]]></script>
   </tool>
 
   <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.633/houdini/toolbar\ShelfDefinitions.shelf">
