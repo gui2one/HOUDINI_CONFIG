@@ -193,8 +193,21 @@ debris.moveToGoodPosition()
 
 dopimport = debris.createNode('dopimport')
 dopimport.parm('doppath').set(dopnet.path())
+dopimport.parm('objpattern').set('popobject*')
 dopimport.parm('importstyle').set('fetch')
 dopimport.moveToGoodPosition()
+
+
+attribrandomize = debris.createNode('attribrandomize')
+attribrandomize.setName('randomize_pscale',unique_name=True)
+attribrandomize.parm('name').set('pscale')
+attribrandomize.parm('minx').set(0.5)
+attribrandomize.parm('scale').set(0.035)
+
+attribrandomize.setInput(0,dopimport)
+attribrandomize.setDisplayFlag(1)
+attribrandomize.setRenderFlag(1)
+
 
 # Change our viewer to the dop network
 scene_viewer.setPwd(popsolver)
