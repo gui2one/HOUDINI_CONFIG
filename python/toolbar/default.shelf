@@ -1537,6 +1537,7 @@ print 'just written a file at : ', fileName
     <memberTool name="fracture_object"/>
     <memberTool name="debris_sim"/>
     <memberTool name="dust_sim"/>
+    <memberTool name="reset_debris_sims"/>
   </toolshelf>
 
   <tool name="fracture_object" label="Fracture Object" icon="hicon:/SVGIcons.index?SOP_shatter.svg">
@@ -1701,6 +1702,20 @@ execfile(os.path.join(rootPath, './debris_sim.py'),{'hou' : hou }, {'kwargs': {'
 rootPath = hou.getenv('CUSTOM_PYTHON_TOOLS')
 execfile(os.path.join(rootPath, './dust_sim.py'),{'hou' : hou }, {'kwargs': {'pane':None }} )
 ]]></script>
+  </tool>
+
+  <tool name="reset_debris_sims" label="Reset Debris Sims" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[allNodes = hou.node('/obj').allSubChildren()
+
+for node in allNodes:
+    if node.type().name() == 'debrissource':
+        if node.parent().type().name() == 'gui2one_debris_source':
+            print '------> ',node.parent().path()
+            node.parent().parm('resimulate').pressButton()
+        else:
+            print '------> ',node.parent().path()
+            node.parm('resimulate').pressButton()            
+            ]]></script>
   </tool>
 
   <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.633/houdini/toolbar\ShelfDefinitions.shelf">
