@@ -1,0 +1,17 @@
+vector line1_p1 = point(0,"P",0);
+vector line1_p2 = point(0,"P",1);
+vector line2_p1 = point(0,"P",2);
+vector line2_p2 = point(0,"P",3);
+
+float denominator;
+denominator = (line1_p1.x - line1_p2.x)*(line2_p1.y - line2_p2.y) - (line1_p1.y - line1_p2.y) *(line2_p1.x - line2_p2.x);
+
+float X = (line1_p1.x*line1_p2.y  - line1_p1.y*line1_p2.x)*(line2_p1.x - line2_p2.x) - (line1_p1.x-line1_p2.x)*(line2_p1.x*line2_p2.y - line2_p1.y*line2_p2.x) ;
+X /= (line1_p1.x - line1_p2.x)*(line2_p1.y - line2_p2.y) - (line1_p1.y - line1_p2.y) * (line2_p1.x - line2_p2.x) ;
+
+float Y = (line1_p1.x*line1_p2.y  - line1_p1.y*line1_p2.x)*(line2_p1.y - line2_p2.y) - (line1_p1.y-line1_p2.y)*(line2_p1.x*line2_p2.y - line2_p1.y*line2_p2.x) ;
+Y /= (line1_p1.x - line1_p2.x)*(line2_p1.y - line2_p2.y) - (line1_p1.y - line1_p2.y) * (line2_p1.x - line2_p2.x) ;
+if( abs(denominator) > 0.001){
+
+    addpoint(0,set(X,Y,0));
+}
