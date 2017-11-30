@@ -1,0 +1,15 @@
+shader OslCamera(
+    output point  pos  = vector(3.0,3.0,3.0),
+    output vector dir  = 0,
+    output float  tMax = 1.0/0.0)
+{
+    float pa = 1.0;
+    int res[2];
+    //getattribute("camera:pixelaspect", pa);
+    getattribute("camera:resolution", res);
+    float aspect = pa * 1024.0 / 576.0;
+
+    vector right = cross(I, N);
+    dir = I + right * (u - .5) + N * (v - .5) * aspect;
+
+}

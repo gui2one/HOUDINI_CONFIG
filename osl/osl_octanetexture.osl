@@ -1,0 +1,7 @@
+Texture SimpleMaterial(
+
+    output color matColor = 0.0)
+{
+   matColor = color(1.0,0.0,0.0);
+  
+}

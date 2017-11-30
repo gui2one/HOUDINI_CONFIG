@@ -1,0 +1,44 @@
+#include <octane-oslintrin.h>
+
+shader Laminate(
+    color plank1 = .3,
+    color plank2 = color(0, 0, 1),
+    color plank3 = color(0, 1, 0),
+    color plank4 = color(0, 1, 1),
+    color plank5 = color(1, 0, 0),
+    color plank6 = color(1, 0, 1),
+    color plank7 = color(1, 1, 0),
+    color plank8 = 1,
+    color plank9 = .1,
+    float plankAspect = 5 [[float min = .01, float max=100, float sliderexponent=3]],
+    matrix Transform = .25,
+    point Projection = point(u, v, 0) [[string inputType = "projection"]],
+    output color c = 0)
+{
+    int AMOUNT = 6;
+    // use the projection and transform inputs
+    point p = transform(1/Transform, Projection);
+    float y = p[1] * plankAspect;
+    // random offset for each row
+    float x = p[0] + noise("cell", y, 0);
+    // random plank and orientation for each cell
+    float rnd = noise("cell", x, y) * AMOUNT;
+    int flip = (rnd - floor(rnd)) < .5;
+    // make UV mapping per cell and evaluate the right texture
+    float plU = x - floor(x);
+    float plV = y - floor(y);
+    if (flip)
+    {
+        plU = 1 - plU;
+        plV = 1 - plV;
+    }
+    if      (rnd < 1) { c = _evaluateDelayed(plank1, plU, plV); }
+    else if (rnd < 2) { c = _evaluateDelayed(plank2, plU, plV); }
+    else if (rnd < 3) { c = _evaluateDelayed(plank3, plU, plV); }
+    else if (rnd < 4) { c = _evaluateDelayed(plank4, plU, plV); }
+    else if (rnd < 5) { c = _evaluateDelayed(plank5, plU, plV); }
+    else if (rnd < 6) { c = _evaluateDelayed(plank6, plU, plV); }
+    else if (rnd < 7) { c = _evaluateDelayed(plank7, plU, plV); }
+    else if (rnd < 8) { c = _evaluateDelayed(plank8, plU, plV); }
+    else              { c = _evaluateDelayed(plank9, plU, plV); }
+}

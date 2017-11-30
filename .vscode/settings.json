@@ -2,5 +2,6 @@
     "python.formatting.provider": "autopep8",
     "python.autoComplete.extraPaths": [
         "D:/CODE/HOUDINI_CONFIG/python/toolbar/custom_python_tools/gui2one_utils/"        
-    ]
+    ],
+    "C_Cpp.errorSquiggles": "Disabled"
 }
