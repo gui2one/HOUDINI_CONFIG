@@ -1,0 +1,46 @@
+// All-purpose motion vector output - creates 2D vectors in absolute pixels,
+// suitable for Flame MotionBlur or Nuke VectorBlur
+// lewis@lewissaunders.com 2017
+
+// Paste in an Inline Code VOP - turn on "Expand Expressions in Code" and
+// add a single vector output called v, which should be connected to a Bind
+// Export set to vector.  The name in the Bind will be what you use in
+// Mantra's Extra Image Planes Section.
+
+// On the Mantra ROP, turn on "Allow Motion Blur", turn "Geo Time Samples"
+// up to 2, and disable "Allow Image Motion Blur" if the blur will be
+// done purely in post.
+
+// This works with or without a velocity attribute from the geo, and includes 
+// effect of scene-level transforms.
+
+// Find position at start of shutter opening - if rendering in
+// raytrace mode with image motion blur on, the regular P global
+// is offset for the current sample time which we don't want
+vector p0 = getblurP(0.0);
+
+vector camerav;
+if(isbound("v")) {
+    // We have a v attribute on the geometry
+    // This will likely be per second rather than per frame
+    vector framev = v / $FPS;
+    
+    // Transform from object space into camera space
+    // This takes into account scene-level transforms
+    camerav = vtransform("space:object", "space:camera", framev);
+} else {
+    // No v attribute on geometry, so work one out
+    camerav = getblurP(1.0) - p0;
+}
+
+// Find difference between start of shutter opening and end in
+// NDC space
+vector ndcv = toNDC(p0 + camerav) - toNDC(p0);
+
+// Multiply by render resolution to get screen space in pixels
+vector res;
+renderstate("image:resolution", res);
+ndcv *= set(res.x, res.y, 0.0);
+
+// $v has to be escaped here because we need expressions expanded to get $FPS
+\$v = ndcv;
