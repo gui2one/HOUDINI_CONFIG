@@ -1,0 +1,102 @@
+/*
+based on a great tutorial :
+https://www.youtube.com/watch?v=EZXz-uPyCyA
+
+*/
+int rayPlaneIntersect(const vector planeN;
+                      vector planeP;
+                      vector pointP;
+                      vector rayDir;
+                      vector hitP)
+{
+    vector W = planeP - pointP;
+    /// K is the ratio between length of the two projected vectors onto planeN
+    float K = dot(W, planeN) / dot(rayDir, planeN);
+
+    hitP = pointP + (K * rayDir);
+    /*
+    if K < 0 then V is pointing away from the plane
+    and if K > 1 ???
+    */
+    return (K >= 0.0 && K <= 1.0);
+}
+
+vector projectVector(vector a; vector b)
+{
+    vector vec = (dot(b, a) / dot(b, b)) * b;
+    return vec;
+}
+
+vector barycentricCoords(vector hitP; vector A; vector B; vector C)
+{
+
+    vector V = (B - A) - projectVector(B - A, B - C);
+    float a = 1.0 - (dot(V, hitP - A) / dot(V, B - A));
+
+    V = (C - B) - projectVector(C - B, A - C);
+    float b = 1.0 - (dot(V, hitP - B) / dot(V, C - B));
+
+    V = (A - C) - projectVector(A - C, A - B);
+    float c = 1.0 - (dot(V, hitP - C) / dot(V, A - C));
+    return set(a, b, c);
+}
+
+int triIntersect(vector hitP; vector A; vector B; vector C)
+{
+
+    vector V = (B - A) - projectVector(B - A, B - C);
+    float a = 1.0 - (dot(V, hitP - A) / dot(V, B - A));
+
+    V = (C - B) - projectVector(C - B, A - C);
+    float b = 1.0 - (dot(V, hitP - B) / dot(V, C - B));
+
+    //     if (a >= 0.0 && a<= 1.0 && b >=0.0 && b<=1.0){
+    //         //return 1;
+    //     }
+    V = (A - C) - projectVector(A - C, A - B);
+    float c = 1.0 - (dot(V, hitP - C) / dot(V, A - C));
+
+    float threshold = -0.0001;
+    return (a >= threshold && a <= 1.0 - threshold && b >= threshold && b <= 1.0 - threshold && c >= threshold && c <= 1.0 - threshold);
+}
+
+int nTris = nprimitives(1);
+vector hitPositions[];
+
+int hitPrims[];
+float distances[];
+for (int tri = 0; tri < nTris; tri++)
+{
+    vector planeN = prim(1, "N", tri);
+    vector planeP = point(1, "P", int(primpoints(1, tri)[0]));
+
+    vector hitP = 0;
+    int hit = rayPlaneIntersect(planeN, planeP, @P, @N * 1000.0, hitP);
+
+    if (hit)
+    {
+
+        //setpointgroup(0,"hit",@ptnum,1);
+        int pts[] = primpoints(1, tri);
+
+        vector p1 = point(1, "P", pts[0]);
+        vector p2 = point(1, "P", pts[1]);
+        vector p3 = point(1, "P", pts[2]);
+        i @hitTri = triIntersect(hitP, p1, p2, p3);
+        //v@bCoords = barycentricCoords(hitP , p1, p2, p3);
+
+        if (@hitTri)
+        {
+            append(hitPositions, hitP);
+            append(hitPrims, tri);
+            float dist = distance(hitP, @P);
+            append(distances, dist);
+
+            //break;
+        }
+    }
+}
+
+int argID[];
+argID = argsort(distances);
+@P = hitPositions[argID[0]];

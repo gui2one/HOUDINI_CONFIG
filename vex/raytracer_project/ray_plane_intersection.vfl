@@ -1,0 +1,32 @@
+/*
+based on a great tutorial :
+https://www.youtube.com/watch?v=fIu_8b2n8ZM
+
+*/
+int rayPlaneIntersect(const vector planeN;
+                      vector planeP;
+                      vector pointP;
+                      vector rayDir;
+                      vector hitP)
+{
+    vector W = planeP - pointP;
+    /// K is the ratio between length of the two projected vectors onto planeN
+    float K = dot(W, planeN) / dot(rayDir, planeN);
+
+    hitP = pointP + (K * rayDir);
+    /*
+    if K < 0 then V is pointing away from the plane
+    and if K > 1 ???
+    */
+    return (K >= 0.0 && K <= 1.0);
+}
+
+vector planeN = point(1, "N", 0);
+vector planeP = point(1, "P", 0);
+
+vector hitP = 0;
+int hit = rayPlaneIntersect(planeN, planeP, @P, @N, hitP);
+if (hit)
+{
+    @P = hitP;
+}
