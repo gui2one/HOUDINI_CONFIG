@@ -1,0 +1,76 @@
+int rayPlaneIntersect(float3 planeN, float3 planeP, float3 pointP, float3 rayDir, float3 *hitP)
+{
+    float3 W = planeP - pointP;
+    
+    float K = dot(W, planeN) / dot( rayDir, planeN);
+    
+    *hitP = pointP + ( K * rayDir);
+    return  K>= 0.0 && K <= 1.0;
+}
+
+float3 testFunction( float3 vec, float3 *outVec){
+    *outVec = vec + (*outVec);
+    return vec;
+}
+
+
+kernel void kernelName( 
+                 int sample_val_length, 
+                 global float * sample_val ,
+                 int num_sample_length, 
+                 global int * num_sample ,
+                 int triN_length, 
+                 global float * triN ,
+                 int P_length, 
+                 global float * P ,
+                 int ray_dir_length, 
+                 global float * ray_dir )
+{
+    int idx = get_global_id(0);
+    if (idx >= num_sample[0])
+        return;
+    
+    int nSamples = num_sample[0];
+    int nTriangles = (sample_val_length - nSamples) / 3;
+    
+    int hitPlane = 0;
+    float3 hitP = 0;
+    for (int i=0; i< nTriangles; i++){
+
+        float3 planeN = 0;
+        planeN.x = triN[(i*3)+0];
+        planeN.y = triN[(i*3)+1];    
+        planeN.z = triN[(i*3)+2];   
+        
+        
+        float3 planeP = 0;
+        planeP.x =  P[(nSamples * 3)+0];
+        planeP.y =  P[(nSamples * 3)+1];    
+        planeP.z =  P[(nSamples * 3)+2];    
+        float3 pointP = vload3(idx,P);
+        
+        float3 rayDir = vload3(idx, ray_dir);
+        rayDir = rayDir * 100.0f;
+        
+        float3 hitP = 0;
+        hitPlane = rayPlaneIntersect(planeN, planeP, pointP, rayDir, &hitP);
+        sample_val[idx] = hitPlane;
+        if(hitPlane){
+            vstore3( hitP, idx ,P);
+            break;
+            
+        }
+        
+        
+
+    }
+    
+    
+
+    
+    
+    
+//     if(hitPlane)
+
+    
+}

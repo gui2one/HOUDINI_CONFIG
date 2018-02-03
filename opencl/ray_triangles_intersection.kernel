@@ -1,0 +1,136 @@
+int rayPlaneIntersect(float3 planeN, float3 planeP, float3 pointP, float3 rayDir, float3 *hitP)
+{
+    float3 W = planeP - pointP;
+    
+    float K = dot(W, planeN) / dot( rayDir, planeN);
+    
+    *hitP = pointP + ( K * rayDir);
+    return  K>= 0.0 && K <= 1.0;
+}
+
+float3 projectVector(float3 a, float3 b)
+{
+    float3 vec = (dot(b,a) / dot(b,b)) * b; 
+    return vec;
+}
+
+int triangleIntersect(float3 hitP, float3 A, float3 B, float3 C)
+{
+    
+    float3 V = (B-A) - projectVector(B-A, B-C);
+    float a = 1.0 - ( dot(V, hitP - A ) / dot( V, B-A ));
+    
+    V = (C-B) - projectVector(C-B, A-C);
+    float b = 1.0 - ( dot(V, hitP - B ) / dot( V, C-B ));  
+    
+    V = (A-C) - projectVector(A-C, A-B);
+    float c = 1.0 - ( dot(V, hitP - C ) / dot( V, A-C ));      
+    
+    float threshold = -0.0001;
+    return (a >= threshold && a<= 1.0 - threshold 
+            && b >=threshold && b<=1.0 - threshold
+            && c >= threshold && c<= 1.0 - threshold);
+}
+
+kernel void kernelName( 
+                 int sample_val_length, 
+                 global float * sample_val ,
+                 int num_sample_length, 
+                 global int * num_sample ,
+                 int triN_length, 
+                 global float * triN ,
+                 int P_length, 
+                 global float * P ,
+                 int ray_dir_length, 
+                 global float * ray_dir,
+                 int __P_scratch_length, 
+                 global float * __P_scratch,
+                 int hit_prims_length, 
+                 global int * hit_prims_index, 
+                  global int * hit_prims)
+{
+     int idx = get_global_id(0);
+    if (idx >= num_sample[0])
+        return;
+    
+    int nSamples = num_sample[0];
+    int nTriangles = (sample_val_length - nSamples) / 3;
+    
+    
+    int hitCounter = 0;
+    for (int i=0; i< nTriangles; i++){
+
+        int hitPlane = 0;
+        
+        float3 planeN = 0;
+        planeN = vload3((i), triN);
+        
+        float3 planeP = 0;
+
+
+        //take triangle 's first point pos 
+        planeP = vload3(nSamples+1 + (i*3) ,P); 
+        float3 pointP = vload3(idx,P);
+        
+        float3 rayDir = vload3(idx, ray_dir);
+        rayDir = rayDir * 100.0f;
+        
+
+        
+        
+        float3 hitP = 0;
+        hitPlane = rayPlaneIntersect(planeN, planeP, pointP, rayDir, &hitP);
+        sample_val[idx] = hitPlane;
+        if(hitPlane){
+
+            float3 A = vload3((nSamples+(i*3)), P);
+            float3 B = vload3((nSamples+(i*3))+1, P);
+            float3 C = vload3((nSamples+(i*3))+2, P);
+            /*
+                int triangleIntersect(float3 hitP, float3 A, float3 B, float3 C)
+            */
+            int triangleHit = triangleIntersect(hitP, A, B, C);
+            if(triangleHit){
+                hitCounter += 1;
+                //vstore3( hitP, idx ,__P_scratch);
+
+                hit_prims[(idx * 100) + hitCounter-1] = i;
+                //break;
+            }
+             
+        }
+        
+        
+
+    }
+
+    sample_val[idx] = hitCounter;
+    
+}
+
+kernel void writeBack(  
+                    int sample_val_length, 
+                    global float * sample_val ,
+                    int num_sample_length, 
+                    global int * num_sample ,
+                    int triN_length, 
+                    global float * triN ,
+                    int P_length, 
+                    global float * P ,
+                    int ray_dir_length, 
+                    global float * ray_dir,
+                    int __P_scratch_length, 
+                    global float * __P_scratch,
+                 int hit_prims_length, 
+                 global int * hit_prims_index, 
+                  global int * hit_prims )
+{
+
+
+    int idx = get_global_id(0);
+    if (idx >= num_sample[0])
+        return;
+
+    vstore3(vload3(idx,__P_scratch), idx, P);
+
+}
