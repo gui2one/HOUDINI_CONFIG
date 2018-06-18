@@ -2,7 +2,7 @@
 
 shader myShader(
     color plank1 = .3,
-    color plank2 = color(1.0, .2, 0),
+    color plank2 = color(1.0, .2, 1.0),
     // color plank3 = color(1, 1, 0),
     // color plank4 = color(1, 1, 1),
     // color plank5 = color(1, 0, 0),
@@ -10,10 +10,12 @@ shader myShader(
     // color plank7 = color(1, 1, 0),
     // color plank8 = 1,
     // color plank9 = .1,
-    // float plankAspect = 5 [[float min = .01, float max=100, float sliderexponent=3]],
+    float plankAspect = 5 [[float min = .01, float max=100, float sliderexponent=3]],
     // matrix Transform = .25,
     // point Projection = point(u, v, 0) [[string inputType = "projection"]],
+
+    input color inClr = color(0.0,1.0,0.0)
     output color c = 0)
 {
-    c = plank2;
+    c = 1.0-P[2];
 }
