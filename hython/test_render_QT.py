@@ -201,7 +201,7 @@ class myWindow(QtGui.QWidget):
 
 		# override render resolution
 		self.rop.parm('HO_overrideCameraRes').set(1)
-		self.rop.parm('HO_overrideResScale').set(3)
+		self.rop.parm('HO_overrideResScale').set(7)
 
 		self.rop.parm('HO_overrideRes1').deleteAllKeyframes()
 		self.rop.parm('HO_overrideRes2').deleteAllKeyframes()
