@@ -42,6 +42,12 @@ shelfutils.installOrboltAsset(kwargs, "SideFX::toonsimple", "http://www.orbolt.c
     <memberTool name="cam_angle_to_F"/>
     <memberTool name="read_AE_data"/>
     <memberTool name="install_HIP_hdas"/>
+    <memberTool name="list_parm_templates"/>
+    <memberTool name="add_instance_point"/>
+    <memberTool name="find_opened_HDAs"/>
+    <memberTool name="ffmpeg_render"/>
+    <memberTool name="osl_reload_script"/>
+    <memberTool name="HipLoader"/>
   </toolshelf>
 
   <tool name="null_OUT" label="null_OUT" icon="PLASMA_App">
@@ -67,14 +73,14 @@ shelfutils.installOrboltAsset(kwargs, "SideFX::toonsimple", "http://www.orbolt.c
 if(hou.selectedNodes().__len__() > 0):
 
     sel = hou.selectedNodes()[0]
-    #print sel.outputs()
+
 else:
     hou.ui.displayMessage("Select a node")
     # if selection is empty exit the tool
     sys.exit()
     
 
-#print sel.children()   
+ 
 
 nullNode = sel.parent().createNode("null")
 nullNode.setName("OUT", True)
@@ -86,15 +92,13 @@ for conn in sel.outputConnections():
     index = conn.inputIndex()
     outputNode = conn.outputItem()
     outputNode.setInput(index,nullNode)
-    #print outputNode.name
+
   
 nullNode.insertInput(0,sel)    
 
 nullNode.moveToGoodPosition()
 
-#nullNode.setDisplayFlag(1)
-#nullNode.setRenderFlag(1)
-#nullNode.setTemplateFlag(1)]]></script>
+]]></script>
   </tool>
 
   <tool name="dof_null" label="dof_null" icon="PLASMA_App">
@@ -566,8 +570,11 @@ selection[0].destroy()]]></script>
 
   <tool name="shader_preview" label="shader preview" icon="PLASMA_App">
     <toolMenuContext name="network">
+      <contextOpType>mat</contextOpType>
       <contextNetType>SHOP</contextNetType>
+      <contextNetType>VOPNET</contextNetType>
     </toolMenuContext>
+    <toolSubmenu>gui2one_scripts</toolSubmenu>
     <script scriptType="python"><![CDATA[
 
 selected = hou.selectedNodes()[0]
@@ -963,6 +970,10 @@ bakeKeyframes(sel[0])]]></script>
   </tool>
 
   <tool name="Cop_detect_passes" label="COP detect passes" icon="hicon:/SVGIcons.index?BUTTONS_add_image.svg">
+    <toolMenuContext name="network">
+      <contextOpType>/img</contextOpType>
+      <contextNetType>COP2</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import os
 import re
 import sys
@@ -974,7 +985,7 @@ if file == "":
     
 ext = os.path.splitext(file)[1]
 
-print "extension :", ext
+#print "extension :", ext
 
 filePath = hou.expandString(file)
 
@@ -1024,6 +1035,11 @@ imgNode.moveToGoodPosition()
 
 
 choices = hou.ui.selectFromList(listTitles)
+if len(choices) == 0 :
+    imgNode.destroy()
+    sys.exit(0)
+    
+fileNodes = []
 for choice in choices:
     # print "choice :",choice
     fileNode = imgNode.createNode("file")
@@ -1032,7 +1048,17 @@ for choice in choices:
     fileName = os.path.join(dirName, listTitles[choice])
     fileNode.parm("filename1").set(fileName.replace("\\","/"))
     
+    fileNodes.append(fileNode)
     # print listTitles[choice]
+
+last = fileNodes[0]
+for i in range(len(fileNodes)-1) :
+#    print fileNodes[i]
+    addNode = imgNode.createNode("add")
+    addNode.setFirstInput(last)
+    addNode.setInput(1,fileNodes[i+1])    
+    
+    last = addNode
     
     
     
@@ -1753,13 +1779,33 @@ execfile(os.path.join(rootPath, './small_chunks_sim.py'),{'hou' : hou }, {'kwarg
   </tool>
 
   <tool name="find_opened_definition" label="Find Opened Definition" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[selection = hou.selectedNodes()[0]
-assetTypeName = selection.type().name()
+    <toolMenuContext name="network">
+      <contextNetType>OBJ</contextNetType>
+      <contextNetType>SOP</contextNetType>
+      <contextNetType>CHOP</contextNetType>
+      <contextNetType>ROP</contextNetType>
+      <contextNetType>SHOP</contextNetType>
+      <contextNetType>COP2</contextNetType>
+      <contextNetType>VOP</contextNetType>
+      <contextNetType>VOPNET</contextNetType>
+      <contextNetType>DOP</contextNetType>
+    </toolMenuContext>
+    <toolSubmenu>gui2one_scripts</toolSubmenu>
+    <script scriptType="python"><![CDATA[selection = hou.selectedNodes()
 
 
-for node in hou.node('/').allSubChildren():
-    if node.type().name() == assetTypeName:
-        print node.isEditable() ,'--->', node.path()]]></script>
+if len(selection) == 0:
+    hou.ui.displayMessage("select an asset of whitch type you want to find opened definitions ")
+else : 
+    assetTypeName = selection[0].type().name()
+    foundNum = 0
+    for node in hou.node('/').allSubChildren():
+        if node.type().name() == assetTypeName:
+            if node.isEditable() :
+                print node.isEditable() ,'--->', node.path()
+                foundNum += 1
+    if foundNum == 0 :
+        print "no opened definition found for asset type ",assetTypeName]]></script>
   </tool>
 
   <tool name="pop render view" label="Pop Render View" icon="PLASMA_App">
@@ -1847,7 +1893,7 @@ choice = hou.ui.selectFromList(list, clear_on_cancel = True)
 settings = vp.settings()
 
 if len(choice) != 0:
-    settings.uvDisplayAttribute(list[choice[0]])
+    settings.setUVDisplayAttribute(list[choice[0]])
 #for entry in content:
 #    print entry]]></script>
   </tool>
@@ -2000,14 +2046,191 @@ else :
     print failed_num, "failed"]]></script>
   </tool>
 
-  <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.268/houdini/toolbar\ShelfDefinitions.shelf">
-    <addMemberToolshelf name="gui2one" inPosition="16"/>
-    <addMemberToolshelf name="octane" inPosition="17"/>
-  </shelfSetEdit>
+  <tool name="list_parm_templates" label="List Parm templates" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[
+if len(hou.selectedNodes()) :
+    selection = hou.selectedNodes()[0]
+    for entry in selection.parmTemplateGroup().entries():
+        print entry.label(),"_____________________________"
+        for entry2 in entry.parmTemplates():
+            print "\t",entry2
+    
+]]></script>
+  </tool>
 
-  <shelfSetEdit name="shelf_set_td" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.268/houdini/toolbar\ShelfDefinitions.shelf">
-    <addMemberToolshelf name="gui2one" inPosition="16"/>
-    <addMemberToolshelf name="octane" inPosition="17"/>
-    <addMemberToolshelf name="muscles" inPosition="18"/>
+  <tool name="add_instance_point" label="Add instance point" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+import toolutils
+sceneViewer = toolutils.sceneViewer()
+print sceneViewer
+if hou.selectedNodes() :
+    selection = hou.selectedNodes()[0]
+    if selection.type().name() != 'instance' :
+        hou.ui.displayMessage("the node must be of 'instance' type");
+        sys.exit(0)
+    
+else : 
+    selection = hou.node("/obj/").createNode("instance", "my_pick_node")
+    print selection.children()
+    
+
+print sceneViewer.isOrientingOnSnap()
+sceneViewer.setOrientOnSnap(1)
+sceneViewer.selectPositions()[0]
+
+]]></script>
+  </tool>
+
+  <tool name="find_opened_HDAs" label="find Opened HDAs" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[root = hou.node("/")
+print len(root.allSubChildren())
+
+unlockedHDAs = []
+for node in root.allSubChildren():
+
+    if node.type().definition() and node.isLockedHDA() == False:
+#        print node.path()
+        unlockedHDAs.append(node)
+        
+print len(unlockedHDAs)
+
+print unlockedHDAs[0].path()]]></script>
+  </tool>
+
+  <tool name="ffmpeg_render" label="ffmpeg render" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+import os
+import subprocess
+import re
+# C:\Users\gui2one\Downloads\ffmpeg-20170125-2080bc3-win64-static\bin
+ffmpegPath =  os.path.join("C:\\","Users","gui2one","Downloads","ffmpeg-20170125-2080bc3-win64-static","bin","ffmpeg.exe")
+if not os.path.isfile(ffmpegPath):
+    print "bad file"
+    ffmpegPath = hou.ui.selectFile(file_type=hou.fileType.Any)
+#    print ffmpegPath
+    
+    
+
+sequencePath  = hou.ui.selectFile(
+                                title='Select an image sequence',
+                                file_type=hou.fileType.Any, 
+                                collapse_sequences=True,
+                                pattern="*")  
+if sequencePath == '':
+    sys.exit(0)
+
+    
+basename = os.path.basename(sequencePath)
+fileName, ext = os.path.splitext(basename)
+## find $F expression
+regex = re.compile('\$F\d+', re.IGNORECASE)
+to_replace = ''
+numZeros = -1
+for match in regex.finditer(fileName):
+    # print "found -->",match.group(0)
+    to_replace = match.group(0)
+    numZeros = int(match.group(0).replace('$F',''))
+    
+dirPath = os.path.dirname(sequencePath)
+# print "extension -->",ext
+# print "dir path -->",dirPath
+
+fileName = fileName.replace(to_replace,'%0'+str(numZeros)+'d')
+fileName += ext
+
+fullSource = os.path.join(dirPath,fileName).replace("\\","/")
+# print "ffmpeg Path -->" , ffmpegPath
+
+choice = hou.ui.displayMessage("add a soud file ?", buttons=('OK','Cancel'), close_choice=1, default_choice=1)
+
+soundFile = ''
+if choice == 0 : ## means 'ok'
+    soundFile = hou.ui.selectFile(start_directory=hou.expandString('$HIP'), pattern="*.wav,*.mp3")
+    # print "soundFile -->",soundFile
+#sys.exit(0)
+
+commandArray = []
+commandArray.append(ffmpegPath)
+commandArray.append('-i')
+commandArray.append(fullSource)
+
+if soundFile != '':
+    commandArray.append('-i')
+    commandArray.append(soundFile)   
+    
+commandArray.append('-b:v')    
+commandArray.append('20000k')    
+commandArray.append('-c:v')
+commandArray.append('libx264')
+commandArray.append('-preset')
+commandArray.append('veryslow')
+commandArray.append('D:/WORK/HOUDINI_16_5_playground/render/robotic_arm/aaa__01.mp4')
+
+# subprocess.call([ffmpegPath, '-i',fullSource,'D:/WORK/HOUDINI_16_5_playground/render/robotic_arm/aaa__01.mp4'])
+subprocess.call(commandArray)
+
+
+print "DONE"]]></script>
+  </tool>
+
+  <tool name="osl_reload_script" label="osl reload script" icon="PLASMA_App">
+    <toolMenuContext name="network">
+      <contextNetType>SHOP</contextNetType>
+      <contextNetType>VOP</contextNetType>
+      <contextNetType>VOPNET</contextNetType>
+    </toolMenuContext>
+    <toolSubmenu>gui2one_scripts</toolSubmenu>
+    <script scriptType="python"><![CDATA[sel = hou.selectedNodes()
+
+if len(sel) == 1 :
+    if sel[0].type().name() == 'octane::NT_TEX_OSL':
+    
+        parent = sel[0].parent()
+        scriptPath = sel[0].parm('A_FILENAME').eval()
+        name = sel[0].name()
+        conn = sel[0].outputConnections()[0]
+        outNode = conn.outputNode()
+        inputIndex = conn.inputIndex()
+        outputIndex = conn.outputIndex()        
+        pos = sel[0].position()
+        sel[0].destroy()
+        
+        newNode = parent.createNode('octane::NT_TEX_OSL', node_name=name)
+        newNode.parm('A_FILENAME').set( scriptPath )
+        newNode.setPosition( pos)
+        
+        outNode.setInput( inputIndex , newNode)
+#         print conn.inputIndex()
+        
+
+        ]]></script>
+  </tool>
+
+  <tool name="HipLoader" label="Hip Loader" icon="hicon:/SVGIcons.index?BUTTONS_add_constraints.svg">
+    <script scriptType="python"><![CDATA[import subprocess
+import os
+
+script_path = os.path.join("D:","CODE","HOUDINI_CONFIG", "hython","HipLoader.py")
+print script_path
+hcmd_path = os.path.join(hou.expandString('$HFS'),'bin','hcmd.exe')
+hython_path = os.path.join(hou.expandString('$HFS'),'bin','hython.exe')
+#cmd = hython_path
+#cmd += ' '+ script_path
+#cmd += ' && PAUSE'
+
+#p = subprocess.Popen(hcmd_path+' -hython ', shell=False, stdin=subprocess.PIPE ,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+p = subprocess.Popen([hython_path, script_path], shell=False, bufsize=256, stdin=subprocess.PIPE ,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+
+output, error = p.communicate(b"communicating .... ' stdin")
+rc = p.returncode
+#
+print "return Code :\n\t", rc
+print "\nOUTPUT :\n\t", output
+print "\nERROR :\n\t", error]]></script>
+  </tool>
+
+  <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.405/houdini/toolbar\ShelfDefinitions.shelf">
+    <addMemberToolshelf name="octane" inPosition="16"/>
+    <addMemberToolshelf name="gui2one" inPosition="17"/>
   </shelfSetEdit>
 </shelfDocument>
