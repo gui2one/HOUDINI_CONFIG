@@ -1,0 +1,23 @@
+/// run over primitives
+
+int pts[] = primpoints(0, @primnum);
+int numPts = len(pts);
+foreach(int pt; pts){
+    int n1 = neighbour(0,pt,0);
+    int n2 = neighbour(0,pt,1);
+    
+    vector dir1, dir2, finalDir;
+    vector curPos = point(0, "P", pt);
+    dir1 =  vector(point(0, "P", n1 )) - curPos ;
+    dir2 =  vector(point(0, "P", n2 )) - curPos ;    
+    dir1 = normalize(dir1);
+    dir2 = normalize(dir2);
+    finalDir = normalize((dir1 + dir2) /2.0);    
+    
+    vector cross = cross(dir1, dir2);
+    if(dot( @N, cross) > 0  || pt == numPts-1){
+        setpointattrib(0,"N",pt, finalDir);
+    }else{
+       setpointattrib(0,"N",pt, -finalDir);
+    }
+}
