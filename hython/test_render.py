@@ -1,6 +1,6 @@
 import sys
 
-
+import hou
 
 hou.hipFile.load('D:/WORK/HOUDINI_16_playground/hython_test.hiplc')
 
