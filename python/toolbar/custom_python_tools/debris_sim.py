@@ -1,3 +1,4 @@
+import hou
 import toolutils
 import soptoolutils
 
