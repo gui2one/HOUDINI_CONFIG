@@ -48,6 +48,7 @@ shelfutils.installOrboltAsset(kwargs, "SideFX::toonsimple", "http://www.orbolt.c
     <memberTool name="ffmpeg_render"/>
     <memberTool name="osl_reload_script"/>
     <memberTool name="HipLoader"/>
+    <memberTool name="check_duplicate_inputs"/>
   </toolshelf>
 
   <tool name="null_OUT" label="null_OUT" icon="PLASMA_App">
@@ -2229,8 +2230,53 @@ print "\nOUTPUT :\n\t", output
 print "\nERROR :\n\t", error]]></script>
   </tool>
 
+  <tool name="check_duplicate_inputs" label="Check for duplicate inputs" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[for sel in hou.selectedNodes():
+    collection = []
+    duplicatesIndices =  []
+    inputs = sel.inputs()
+    
+    for i, input in enumerate(inputs):
+        if input.name() in collection :
+            print "duplicate at index", i
+            duplicatesIndices.append(i)
+        else : 
+            collection.append(input.name())
+            
+
+            
+    if len(duplicatesIndices) > 0:
+        _str = "duplicates at index "
+        for entry in duplicatesIndices :
+            _str += str(entry)+","
+        print _str
+    else:
+        print "no duplicate found"]]></script>
+  </tool>
+
+  <toolshelf name="destruction_V2" label="Destruction V2">
+    <memberTool name="animated static attrs"/>
+  </toolshelf>
+
+  <tool name="animated static attrs" label="Animated Static Attrs" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import os
+tools_path = hou.getenv("CUSTOM_PYTHON_TOOLS")
+#print tools_path
+if tools_path :
+    path = os.path.join(tools_path, "destruction_V2/add_animated_static_attrs.py")
+    execfile(path)
+else :
+    print "CUSTOM_PYTHON_TOOLS env variable missing chief !"
+]]></script>
+  </tool>
+
+  <shelfSetEdit name="shelf_set_td" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.405/houdini/toolbar\ShelfDefinitions.shelf">
+    <addMemberToolshelf name="destruction" inPosition="16"/>
+    <addMemberToolshelf name="destruction_V2" inPosition="17"/>
+  </shelfSetEdit>
+
   <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.405/houdini/toolbar\ShelfDefinitions.shelf">
-    <addMemberToolshelf name="octane" inPosition="16"/>
-    <addMemberToolshelf name="gui2one" inPosition="17"/>
+    <addMemberToolshelf name="destruction" inPosition="16"/>
+    <addMemberToolshelf name="destruction_V2" inPosition="17"/>
   </shelfSetEdit>
 </shelfDocument>
