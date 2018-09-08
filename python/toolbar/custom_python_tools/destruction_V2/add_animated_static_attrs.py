@@ -4,6 +4,7 @@ if len(hou.selectedNodes()):
     
     sel = hou.selectedNodes()[0]
 
+    
     root = sel
     attr_names = ("active", "animated", "deforming")
     attr_values = (0, 1, 0)
@@ -19,8 +20,9 @@ if len(hou.selectedNodes()):
         attr_node.parm("type1").set(1)  # integer type
         attr_node.parm("value1v1").set(attr_values[i])
 
-        if i > 0:
-            attr_node.setPosition(new_nodes[i-1].position() + hou.Vector2(0, -1))
+        attr_node.setPosition(root.position() + hou.Vector2(0, -1))
+        # if i > 0:
+        #     attr_node.setPosition(new_nodes[i-1].position() + hou.Vector2(0, -1))
         root = attr_node
 
     null_node = sel.parent().createNode('null')
