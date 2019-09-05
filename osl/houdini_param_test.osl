@@ -1,0 +1,6 @@
+shader OslTexture(
+    float a = 1.0,
+    output color c = 0)
+{
+    c = color(a, a, a);
+}
