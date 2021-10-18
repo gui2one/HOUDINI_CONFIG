@@ -26,6 +26,8 @@
     <memberToolshelf name="gui2one_2"/>
     <memberToolshelf name="gui2one"/>
     <memberToolshelf name="octane"/>
+    <memberToolshelf name="volume_tools_dynamics"/>
+    <memberToolshelf name="labs_toolset"/>
   </shelfSet>
 
   <toolshelf name="gui2one_2" label="gui2one 2.0">
