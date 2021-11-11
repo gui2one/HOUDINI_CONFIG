@@ -2274,9 +2274,4 @@ else :
     <addMemberToolshelf name="destruction" inPosition="16"/>
     <addMemberToolshelf name="destruction_V2" inPosition="17"/>
   </shelfSetEdit>
-
-  <shelfSetEdit name="shelf_set_1" fileLocation="C:/PROGRA~1/SIDEEF~1/HOUDIN~1.405/houdini/toolbar\ShelfDefinitions.shelf">
-    <addMemberToolshelf name="destruction" inPosition="16"/>
-    <addMemberToolshelf name="destruction_V2" inPosition="17"/>
-  </shelfSetEdit>
 </shelfDocument>

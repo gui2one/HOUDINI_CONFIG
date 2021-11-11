@@ -38,6 +38,7 @@
     <memberTool name="place_highlight"/>
     <memberTool name="color_converter"/>
     <memberTool name="gui2one_color_picker"/>
+    <memberTool name="RS populate PBR material"/>
   </toolshelf>
 
   <toolshelf name="gui2one" label="gui2one">
@@ -1046,10 +1047,10 @@ sel = hou.selectedNodes()
 
 for node in sel:
     if node.type().name() == 'materialbuilder' or node.type().name() == 'octane_vopnet' :
-        # print "ok"
+        # print("ok")
         
         existingParms = node.parmTemplateGroup()
-        # print existingParms
+        # print(existingParms)
         group = hou.ParmTemplateGroup()
         folder = hou.FolderParmTemplate("ogl_parms","OGL")
             
@@ -1065,18 +1066,18 @@ for node in sel:
         try:
             node.setParmTemplateGroup( existingParms )
         except hou.OperationFailed:
-            # print "Params already present ?"
+            # print ("Params already present ?")
             pass
          
             
         ## now try and find a texture in the material network
         for child in node.children():
             if child.type().name() == 'collect':
-                print "found"
+                print ("found")
                 for input in child.inputs():
-                    print input
+                    print (input)
                     if input.type().name() == 'output':
-                        print "found output"
+                        print ("found output")
                         
         ]]></script>
   </tool>
