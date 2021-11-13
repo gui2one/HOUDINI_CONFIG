@@ -38,7 +38,7 @@
     <memberTool name="place_highlight"/>
     <memberTool name="color_converter"/>
     <memberTool name="gui2one_color_picker"/>
-    <memberTool name="RS populate PBR material"/>
+    <memberTool name="RS generate PBR material"/>
   </toolshelf>
 
   <toolshelf name="gui2one" label="gui2one">
