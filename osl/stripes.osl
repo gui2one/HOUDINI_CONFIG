@@ -1,0 +1,23 @@
+shader Stripes(
+    float freq = 10.0
+        [[float min=0.01, float max=100.0 ]],
+    float step_start = 0.0
+        [[float min=0.0, float max=1.0]],
+    float step_end = 1.0
+        [[float min=0.0, float max=1.0]],
+    int absolute = 0
+        [[ string widget = "checkBox"]],
+    output color c = 1.0
+)
+{
+    float val = sin(u * freq * M_PI * 2);
+    if( absolute == 1 ){
+        c = vector(abs(val));
+    }else{
+        c = vector(val);
+    }
+
+    float val2 = sin(u * freq * M_PI * 2.0) > 0 ? 1.0 : 0.0; 
+    c = vector(smoothstep(step_start,step_end, sin(u * freq * M_PI * 2.0)));
+
+}
