@@ -1,0 +1,61 @@
+float fract(float x)
+{
+    return (x - floor(x));
+}
+
+point fract(point x)
+{
+    return point(fract(x[0]),fract(x[1]),fract(x[2]));
+}
+
+float random (vector _st) {
+    return fract(sin(dot(_st,
+            vector(12.9898,78.233,0)))* 43758.5453123);
+}
+
+
+
+vector truchetPattern(vector st,float index, float threshold1, float threshold2){
+    float _index = fract(((index-0.5)*2.0));
+    vector _st = st;
+    if (_index > 0.75) {
+        _st = vector(1.0) - _st;
+    } else if (_index > threshold1) {
+        _st = vector(1.0-_st.x,_st.y,0.0);
+    } else if (_index > threshold2) {
+        _st = 1.0-vector(1.0-_st.x,_st.y, 0.0);
+    }
+    return _st;
+}
+
+
+shader TruchetPattern(
+    float freq = 10.0
+    [[float min = 0.0, float max=100.0]],
+    float hardness = 1.0
+    [[float min = 0.0, float max=1.0]],
+    float threshold1 = 0.25
+    [[float min = 0.0, float max=1.0]],    
+    float threshold2 = 0.5
+    [[float min = 0.0, float max=1.0]],    
+    output color c = 1.0
+    ){
+    vector st = vector(u,v, 0.0);
+    st *= freq;
+    // st = (st-vector(5.0))*(abs(sin(u_time*0.2))*5.);
+    // st.x += u_time*3.0;
+
+    vector ipos = floor(st);  // integer
+    vector fpos = fract(st);  // fraction
+
+    vector tile = truchetPattern(fpos, random( ipos ), threshold1, threshold2);
+
+    float clr = 0.0;
+
+    // Maze
+    clr = smoothstep(tile.x-hardness,tile.x,tile.y)-
+            smoothstep(tile.x,tile.x+hardness,tile.y);
+
+
+    c = vector(clr);
+}

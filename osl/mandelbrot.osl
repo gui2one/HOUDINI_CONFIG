@@ -1,0 +1,36 @@
+
+vector squareImaginary(vector number){
+	return vector(
+		pow(number.x,2.0)-pow(number.y,2.0),
+		2.0*number.x*number.y,
+        0.0
+	);
+}
+float iterateMandelbrot(vector coord, int maxIterations){
+    
+
+	vector z = vector(0,0,0);
+	for(int i=0;i<maxIterations;i++){
+		z = squareImaginary(z) + coord;
+        
+		if(length(z)>2.0) {
+            return (float(i)/float(maxIterations));
+        }
+	}
+	return float(1.0);
+}
+
+shader Mandelbrot(
+    float offsetx = 0.0
+    [[float min=-1.5, float max = 1.5]],
+    float offsety = 0.0
+    [[float min=-1.5, float max = 1.5]],
+    int maxIterations = 200
+    [[int min = 0, int max = 5000]],
+    float scale = 1.0
+    [[float min=0.0, float max = 2.0]],
+    output color c=1
+){
+
+    c = vector(iterateMandelbrot(vector(u,v,0) * scale + vector(offsetx, offsety, 0), maxIterations));
+}
