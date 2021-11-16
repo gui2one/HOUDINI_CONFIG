@@ -1,0 +1,199 @@
+OpenShadingLanguage 1.00
+# Compiled by oslc 1.10.9
+# options: -o C:\Users\Sprayfly\AppData\Local\Temp\tmpc6wg8ki4.oso -IC:\Program Files\Blender Foundation\Blender 2.83\2.83\scripts\addons\cycles\shader
+shader TruchetPattern
+param	float	freq	10		%meta{float,min,0} %meta{float,max,100}  %read{3,3} %write{2147483647,-1}
+param	float	hardness	1		%meta{float,min,0} %meta{float,max,1}  %read{52,58} %write{2147483647,-1}
+param	float	threshold1	0.25		%meta{float,min,0} %meta{float,max,1}  %read{36,36} %write{2147483647,-1}
+param	float	threshold2	0.5		%meta{float,min,0} %meta{float,max,1}  %read{42,42} %write{2147483647,-1}
+param	point	UV_in	0 0 0		%read{0,1} %write{2147483647,-1}
+oparam	color	c	1 1 1		%read{2147483647,-1} %write{62,62}
+local	float	___366__index	%read{33,42} %write{31,31}
+local	vector	___366__st	%read{35,49} %write{32,48}
+local	vector	st	%read{3,14} %write{2,3}
+local	vector	ipos	%read{20,20} %write{4,4}
+local	vector	fpos	%read{32,32} %write{18,18}
+local	vector	tile	%read{51,59} %write{49,49}
+local	float	clr	%read{62,62} %write{50,61}
+const	int	$const1	0		%read{0,57} %write{2147483647,-1}
+temp	float	$tmp1	%read{2,2} %write{0,0}
+const	int	$const2	1		%read{1,59} %write{2147483647,-1}
+temp	float	$tmp2	%read{2,2} %write{1,1}
+const	float	$const3	0		%read{2,50} %write{2147483647,-1}
+const	string	$const4	"fract"		%read{5,29} %write{2147483647,-1}
+temp	float	$tmp3	%read{18,18} %write{9,9}
+temp	float	$tmp4	%read{8,9} %write{6,6}
+temp	float	$tmp5	%read{9,9} %write{8,8}
+temp	float	$tmp6	%read{18,18} %write{13,13}
+temp	float	$tmp7	%read{12,13} %write{10,10}
+temp	float	$tmp8	%read{13,13} %write{12,12}
+temp	float	$tmp9	%read{18,18} %write{17,17}
+const	int	$const5	2		%read{14,14} %write{2147483647,-1}
+temp	float	$tmp10	%read{16,17} %write{14,14}
+temp	float	$tmp11	%read{17,17} %write{16,16}
+temp	float	$tmp12	%read{27,27} %write{25,25}
+const	string	$const6	"random"		%read{19,19} %write{2147483647,-1}
+temp	float	$tmp13	%read{22,22} %write{21,21}
+temp	float	$tmp14	%read{21,21} %write{20,20}
+const	vector	$const7	12.9898005 78.2330017 0		%read{20,20} %write{2147483647,-1}
+const	float	$const8	43758.5469		%read{22,22} %write{2147483647,-1}
+temp	float	$tmp16	%read{24,25} %write{22,22}
+temp	float	$tmp17	%read{25,25} %write{24,24}
+const	string	$const9	"truchetPattern"		%read{26,26} %write{2147483647,-1}
+const	float	$const10	0.5		%read{27,27} %write{2147483647,-1}
+temp	float	$tmp18	%read{28,28} %write{27,27}
+const	float	$const11	2		%read{28,28} %write{2147483647,-1}
+temp	float	$tmp19	%read{30,31} %write{28,28}
+temp	float	$tmp20	%read{31,31} %write{30,30}
+const	float	$const12	0.75		%read{33,33} %write{2147483647,-1}
+temp	int	$tmp21	%read{34,34} %write{33,33}
+const	vector	$const13	1 1 1		%read{35,35} %write{2147483647,-1}
+temp	int	$tmp23	%read{37,37} %write{36,36}
+const	float	$const14	1		%read{39,48} %write{2147483647,-1}
+temp	float	$tmp24	%read{39,39} %write{38,38}
+temp	float	$tmp25	%read{41,41} %write{39,39}
+temp	float	$tmp26	%read{41,41} %write{40,40}
+temp	int	$tmp27	%read{43,43} %write{42,42}
+temp	vector	$tmp28	%read{48,48} %write{47,47}
+temp	float	$tmp29	%read{45,45} %write{44,44}
+temp	float	$tmp30	%read{47,47} %write{45,45}
+temp	float	$tmp31	%read{47,47} %write{46,46}
+temp	float	$tmp32	%read{61,61} %write{55,55}
+temp	float	$tmp33	%read{52,52} %write{51,51}
+temp	float	$tmp34	%read{55,55} %write{52,52}
+temp	float	$tmp35	%read{55,55} %write{53,53}
+temp	float	$tmp36	%read{55,55} %write{54,54}
+temp	float	$tmp37	%read{61,61} %write{60,60}
+temp	float	$tmp38	%read{60,60} %write{56,56}
+temp	float	$tmp39	%read{58,58} %write{57,57}
+temp	float	$tmp40	%read{60,60} %write{58,58}
+temp	float	$tmp41	%read{60,60} %write{59,59}
+code ___main___
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:44
+#     vector st = vector(UV_in[0],UV_in[1], 0.0);
+	compref		$tmp1 UV_in $const1 	%filename{"C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl"} %line{44} %argrw{"wrr"}
+	compref		$tmp2 UV_in $const2 	%argrw{"wrr"}
+	vector		st $tmp1 $tmp2 $const3 	%argrw{"wrrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:45
+#     st *= freq;
+	mul		st st freq 	%line{45} %argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:49
+#     vector ipos = floor(st);  // integer
+	floor		ipos st 	%line{49} %argrw{"wr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:50
+#     vector fpos = fract(st);  // fraction
+	functioncall	$const4 19 	%line{50} %argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:8
+#     return point(fract(x[0]),fract(x[1]),fract(x[2]));
+	compref		$tmp4 st $const1 	%line{8} %argrw{"wrr"}
+	functioncall	$const4 10 	%argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:3
+#     return (x - floor(x));
+	floor		$tmp5 $tmp4 	%line{3} %argrw{"wr"}
+	sub		$tmp3 $tmp4 $tmp5 	%argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:8
+#     return point(fract(x[0]),fract(x[1]),fract(x[2]));
+	compref		$tmp7 st $const2 	%line{8} %argrw{"wrr"}
+	functioncall	$const4 14 	%argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:3
+#     return (x - floor(x));
+	floor		$tmp8 $tmp7 	%line{3} %argrw{"wr"}
+	sub		$tmp6 $tmp7 $tmp8 	%argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:8
+#     return point(fract(x[0]),fract(x[1]),fract(x[2]));
+	compref		$tmp10 st $const5 	%line{8} %argrw{"wrr"}
+	functioncall	$const4 18 	%argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:3
+#     return (x - floor(x));
+	floor		$tmp11 $tmp10 	%line{3} %argrw{"wr"}
+	sub		$tmp9 $tmp10 $tmp11 	%argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:8
+#     return point(fract(x[0]),fract(x[1]),fract(x[2]));
+	point		fpos $tmp3 $tmp6 $tmp9 	%line{8} %argrw{"wrrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:52
+#     vector tile = truchetPattern(fpos, random( ipos ), threshold1, threshold2);
+	functioncall	$const6 26 	%line{52} %argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:12
+#     return fract(sin(dot(_st,
+	dot		$tmp14 ipos $const7 	%line{12} %argrw{"wrr"}
+	sin		$tmp13 $tmp14 	%argrw{"wr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:13
+#             vector(12.9898,78.233,0)))* 43758.5453123);
+	mul		$tmp16 $tmp13 $const8 	%line{13} %argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:12
+#     return fract(sin(dot(_st,
+	functioncall	$const4 26 	%line{12} %argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:3
+#     return (x - floor(x));
+	floor		$tmp17 $tmp16 	%line{3} %argrw{"wr"}
+	sub		$tmp12 $tmp16 $tmp17 	%argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:52
+#     vector tile = truchetPattern(fpos, random( ipos ), threshold1, threshold2);
+	functioncall	$const9 50 	%line{52} %argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:19
+#     float _index = fract(((index-0.5)*2.0));
+	sub		$tmp18 $tmp12 $const10 	%line{19} %argrw{"wrr"}
+	mul		$tmp19 $tmp18 $const11 	%argrw{"wrr"}
+	functioncall	$const4 32 	%argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:3
+#     return (x - floor(x));
+	floor		$tmp20 $tmp19 	%line{3} %argrw{"wr"}
+	sub		___366__index $tmp19 $tmp20 	%argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:20
+#     vector _st = st;
+	assign		___366__st fpos 	%line{20} %argrw{"wr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:21
+#     if (_index > 0.75) {
+	gt		$tmp21 ___366__index $const12 	%line{21} %argrw{"wrr"}
+	if		$tmp21 36 49 	%argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:22
+#         _st = vector(1.0) - _st;
+	sub		___366__st $const13 ___366__st 	%line{22} %argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:23
+#     } else if (_index > threshold1) {
+	gt		$tmp23 ___366__index threshold1 	%line{23} %argrw{"wrr"}
+	if		$tmp23 42 49 	%argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:24
+#         _st = vector(1.0-_st[0],_st[1],0.0);
+	compref		$tmp24 ___366__st $const1 	%line{24} %argrw{"wrr"}
+	sub		$tmp25 $const14 $tmp24 	%argrw{"wrr"}
+	compref		$tmp26 ___366__st $const2 	%argrw{"wrr"}
+	vector		___366__st $tmp25 $tmp26 $const3 	%argrw{"wrrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:25
+#     } else if (_index > threshold2) {
+	gt		$tmp27 ___366__index threshold2 	%line{25} %argrw{"wrr"}
+	if		$tmp27 49 49 	%argrw{"r"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:26
+#         _st = 1.0-vector(1.0-_st[0],_st[1], 0.0);
+	compref		$tmp29 ___366__st $const1 	%line{26} %argrw{"wrr"}
+	sub		$tmp30 $const14 $tmp29 	%argrw{"wrr"}
+	compref		$tmp31 ___366__st $const2 	%argrw{"wrr"}
+	vector		$tmp28 $tmp30 $tmp31 $const3 	%argrw{"wrrr"}
+	sub		___366__st $const14 $tmp28 	%argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:28
+#     return _st;
+	assign		tile ___366__st 	%line{28} %argrw{"wr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:54
+#     float clr = 0.0;
+	assign		clr $const3 	%line{54} %argrw{"wr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:57
+#     clr = smoothstep(tile[0]-hardness,tile[0],tile[1])-
+	compref		$tmp33 tile $const1 	%line{57} %argrw{"wrr"}
+	sub		$tmp34 $tmp33 hardness 	%argrw{"wrr"}
+	compref		$tmp35 tile $const1 	%argrw{"wrr"}
+	compref		$tmp36 tile $const2 	%argrw{"wrr"}
+	smoothstep	$tmp32 $tmp34 $tmp35 $tmp36 	%argrw{"wrrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:58
+#             smoothstep(tile[0],tile[0]+hardness,tile[1]);
+	compref		$tmp38 tile $const1 	%line{58} %argrw{"wrr"}
+	compref		$tmp39 tile $const1 	%argrw{"wrr"}
+	add		$tmp40 $tmp39 hardness 	%argrw{"wrr"}
+	compref		$tmp41 tile $const2 	%argrw{"wrr"}
+	smoothstep	$tmp37 $tmp38 $tmp40 $tmp41 	%argrw{"wrrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:57
+#     clr = smoothstep(tile[0]-hardness,tile[0],tile[1])-
+	sub		clr $tmp32 $tmp37 	%line{57} %argrw{"wrr"}
+# C:\Users\Sprayfly\Downloads\..\..\..\gui2one\HOUDINI_CONFIG\osl\truchet_pattern.osl:61
+#     c = vector(clr);
+	assign		c clr 	%line{61} %argrw{"wr"}
+	end

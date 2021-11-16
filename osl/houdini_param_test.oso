@@ -1,0 +1,11 @@
+OpenShadingLanguage 1.00
+# Compiled by oslc 1.10.9
+# options: -o C:\Users\Sprayfly\AppData\Local\Temp\tmpd9f1c42_.oso -IC:\Program Files\Blender Foundation\Blender 2.83\2.83\scripts\addons\cycles\shader
+shader OslTexture
+param	float	a	1		%read{0,0} %write{2147483647,-1}
+oparam	color	c	0 0 0		%read{2147483647,-1} %write{0,0}
+code ___main___
+# C:\gui2one\HOUDINI_CONFIG\osl\houdini_param_test.osl:5
+#     c = color(a, a, a);
+	color		c a a a 	%filename{"C:\gui2one\HOUDINI_CONFIG\osl\houdini_param_test.osl"} %line{5} %argrw{"wrrr"}
+	end
