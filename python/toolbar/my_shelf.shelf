@@ -39,6 +39,7 @@
     <memberTool name="color_converter"/>
     <memberTool name="gui2one_color_picker"/>
     <memberTool name="RS generate PBR material"/>
+    <memberTool name="copy_params"/>
   </toolshelf>
 
   <toolshelf name="gui2one" label="gui2one">
