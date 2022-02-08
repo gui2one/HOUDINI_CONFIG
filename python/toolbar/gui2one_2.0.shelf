@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <tool name="multi_curve_edit" label="Multi Curve Edit Freeze" icon="PLASMA_App">
+    <toolMenuContext name="network">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
+    <toolSubmenu>gui2one 2.0</toolSubmenu>
+    <script scriptType="python"><![CDATA[import sys
+
+
+def findCurveInParentNodes(sop_node) :
+    if sop_node.type().name() == "curve" :
+        # print(sop_node)
+        return sop_node
+    else :
+        current = sop_node
+        while current.inputs().__len__() > 0 :
+            if current.inputs()[0].type().name() == "curve" :
+                return current.inputs()[0]
+            current = current.inputs()[0]
+        return None
+
+sel = hou.selectedNodes()
+
+
+
+if len(sel) >= 1 :
+    for sel_node in sel :
+        if sel_node.type().name() == 'edit' :
+            edit_node = sel_node
+            
+            parent_node = edit_node.inputs()[0]
+            parent_type = parent_node.type().name()
+    
+            curve_nodes = []
+            if parent_type == 'merge' :
+                # curve_nodes =  parent_node.inputs()
+                for node in parent_node.inputs() :
+                    curve_nodes.append(findCurveInParentNodes(node))
+            elif parent_type == 'curve' :
+                curve_nodes = [parent_node]
+                 
+            # print(curve_nodes)
+            geo = edit_node.geometry()
+            
+            for prim_id, prim in enumerate(geo.prims()) :
+    
+                path_str = ""
+                for id, pt in enumerate(prim.points()):
+                    path_str += str(pt.position().x())
+                    path_str += ","
+                    path_str += str(pt.position().y())
+                    path_str += ","
+                    path_str += str(pt.position().z())+" "
+                # print (path_str) 
+                curve_nodes[prim_id].parm("coords").set(path_str)
+                
+            edit_node.parm("clearall").pressButton()
+            edit_node.parm("group").set("")
+    
+        else : 
+            hou.ui.displayMessage("selected a edit sop")
+            sys.exit(0)
+else : 
+    hou.ui.displayMessage("selected a edit sop")
+    sys.exit(0)
+]]></script>
+  </tool>
+
+  <tool name="copy_materials" label="Copy Materials" icon="hicon:/SVGIcons.index?BUTTONS_material_include.svg">
+    <script scriptType="python"><![CDATA[import sys
+
+sel = hou.selectedNodes()
+
+if len(sel) == 0:
+    hou.ui.displayMessage("select a OBJ node to extract materials from")
+    sys.exit(0)
+else : 
+    
+    copy_to_path = '/mat'
+    node = sel[0]
+    parms = node.parms()
+    materials_dict = {}
+    for parm in parms :
+        if 'shop_materialpath' in parm.name():
+            mat_node = parm.evalAsNode()
+            materials_dict[parm.name()] = mat_node     
+            
+    for key in materials_dict :
+        mat_node = materials_dict[key]
+        new_mat_node = hou.copyNodesTo([mat_node], hou.node(copy_to_path))
+        materials_dict[key] = new_mat_node[0]
+        node.parm(key).set(new_mat_node[0].path())
+    ]]></script>
+  </tool>
+
+  <tool name="convert_to_octane_material" label="Convert to Octane Material" icon="hicon:/SVGIcons.index?SHOP_material.svg">
+    <script scriptType="python"><![CDATA[import sys
+sel = hou.selectedNodes()
+if len(sel) == 0:
+    hou.ui.displayMessage("selected a Material to be converted to Octane")
+    sys.exit(0)
+
+
+shaders = []
+subnet = sel[0].parent()
+for node in hou.selectedNodes():
+    if 'principledshader::2.0' in node.type().name() :
+       shaders.append(node)
+       
+print(shaders)
+
+for shader in shaders :
+    octane_shader = subnet.createNode("octane_vopnet")
+    octane_shader.setName(shader.name()+"__OCTANE")
+    
+    univ = octane_shader.createNode("octane::NT_MAT_UNIVERSAL")
+    output = octane_shader.node("octane_material1")
+    output.setInput(0, univ)
+    
+    univ.parm("albedor").set(shader.parm("basecolorr").eval())
+    univ.parm("albedog").set(shader.parm("basecolorg").eval())
+    univ.parm("albedob").set(shader.parm("basecolorb").eval())
+    
+    octane_shader.parm("ogl_diffr").set(shader.parm("basecolorr").eval())
+    octane_shader.parm("ogl_diffg").set(shader.parm("basecolorg").eval())
+    octane_shader.parm("ogl_diffb").set(shader.parm("basecolorb").eval())        
+    ]]></script>
+  </tool>
+
+  <tool name="place_highlight" label="Place Highlight" icon="hicon:/SVGIcons.index?OBJ_hlight.svg">
+    <script scriptType="python"><![CDATA[import hou
+import sys
+from hou import hmath
+
+from viewerstate.utils import sopGeometryIntersection
+class ScrubState(object):
+    def __init__(self, scene_viewer, state_name):
+        self.state_name = state_name
+        self.scene_viewer = scene_viewer
+        self._base_x = self._base_frame = None
+        self.geos = []
+
+    def onGenerate(self, kwargs):
+        self._collect_geometry()
+        self.scene_viewer.setPromptMessage(
+            "Drag left/right to scrub along timeline"
+        )
+
+    def onExit(self, kwargs):
+        self.scene_viewer.clearPromptMessage()
+        
+    def _collect_geometry(self):
+        children = hou.node("/obj").children()
+        for child in children :
+            if child.type().name() == 'geo' :
+                self.geos.append(child)
+                print(child)
+
+        pass
+    def _scrub_abs(self, x):
+        # Take the absolute position of the mouse pointer (as a percentage
+        # of the total viewer width) and move that far along the current
+        # frame range
+
+        width, _ = self.scene_viewer.contentSize()
+        pct = x / float(width)
+        start_frame, end_frame = hou.playbar.frameRange()
+        frame = int((end_frame - start_frame) * pct + start_frame)
+        hou.setFrame(frame)
+
+    def _scrub_rel(self, x):
+        # Use the difference between the mouse pointer's current position
+        # and the previous position to calculate how many frames to move
+        # forward/back
+
+        if self._base_x is not None:
+            delta = int((x - self._base_x) / 10.0)
+            frame = max(0, self._base_frame + delta)
+            hou.setFrame(frame)
+        else:
+            self._base_x = x
+            self._base_frame = hou.intFrame()
+
+    
+    def onMouseEvent(self, kwargs):
+        ui_event = kwargs["ui_event"]
+        
+        device = ui_event.device()
+        if device.isLeftButton():
+            ray_origin, ray_dir = ui_event.ray()
+            for geo_node in self.geos :
+
+                geo = geo_node.displayNode().geometry()
+                new_ray_origin = ray_origin * geo_node.worldTransform().inverted()
+                
+                intersected, position, normal, uvw = sopGeometryIntersection(geo, new_ray_origin, ray_dir)
+                if intersected != -1 :
+                    print("hit", geo)
+                    print("position : ", position * geo_node.worldTransform())
+                    print("normal : ", normal)
+                    refl = reflectVector(ray_dir, normal)
+                    print(obj_node)
+                    transform = hmath.buildTransform({
+                        'translate' : refl + position,
+                        'rotate' : (0,0,0),
+                        'scale' : (1,1,1)
+                    })
+                    obj_node.setWorldTransform(transform * geo_node.worldTransform())
+                    print(transform)
+                    return True
+                
+            return True
+
+
+
+def reflectVector(dir, normal) :
+    # r=dâ2(d.dot(n))n
+    r = dir - 2.0 * (dir.dot(normal)) * normal
+    return r
+ 
+
+sel = hou.selectedNodes()
+if len(sel) == 0 :
+    hou.ui.displayMessage("select a obj node or light")
+    sys.exit(0)
+if len(sel) != 1 :
+    hou.ui.displayMessage("select one light only")
+    sys.exit(0)
+
+obj_node = sel[0]
+
+template = hou.ViewerStateTemplate("scrub", "Scrub", hou.objNodeTypeCategory())
+template.bindFactory(ScrubState)
+
+menu = hou.ViewerStateMenu("scrub", "Scrub")
+menu.addRadioStrip("mode", "Mode", "rel")
+menu.addRadioStripItem("mode", "rel", "Relative")
+menu.addRadioStripItem("mode", "abs", "Absolute")
+template.bindMenu(menu)
+
+hou.ui.unregisterViewerState("scrub")
+hou.ui.registerViewerState(template)
+
+scene_viewer = hou.ui.paneTabOfType(hou.paneTabType.SceneViewer)
+scene_viewer.setCurrentState("scrub")
+]]></script>
+  </tool>
+
+  <tool name="color_converter" label="Color Converter" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[btn_id, values = hou.ui.readMultiInput("color value :", ("r", "g", "b"))
+
+
+r = float(values[0]) / 256.0
+g = float(values[1]) / 256.0
+b = float(values[2]) / 256.0
+
+r = r ** (2.2)
+g = g ** (2.2)
+b = b ** (2.2)
+print(r, g, b)]]></script>
+  </tool>
+
+  <tool name="gui2one_color_picker" label="Color Picker" icon="hicon:/SVGIcons.index?MISC_new.svg">
+    <script scriptType="python"><![CDATA[from PySide2 import QtGui, QtCore
+from PySide2 import QtWidgets
+import math
+
+class MyColorPicker(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        
+        box = QtWidgets.QVBoxLayout()
+        
+        file_chooser_btn = hou.qt.FileChooserButton()
+        file_chooser_btn.setFileChooserTitle("Please select a file")
+        file_chooser_btn.setFileChooserMode(hou.fileChooserMode.Read)
+        file_chooser_btn.fileSelected.connect(self.onFileSelected)
+
+        self.color_field = hou.qt.ColorField()
+        self.setGeometry(200,200,500,500)
+        self.setWindowTitle("Color Picker")
+        self.setLayout(box)
+
+        self.scrollArea = QtWidgets.QScrollArea()
+
+        box.addWidget(self.scrollArea)
+        self.lbl = QtWidgets.QLabel()
+        self.lbl.resize(300,300)
+        self.scrollArea.setWidget(self.lbl)
+        self.scrollArea.setWidgetResizable(True)
+
+        # self.lbl.HoverMove.connect(self.onMouseMove)
+        box.addWidget(file_chooser_btn)
+        box.addWidget(self.color_field)
+        
+        self.image = QtGui.QImage()
+        
+    def onFileSelected(self, file_path):
+        print("Selected file:", file_path)
+        self.image = QtGui.QImage(hou.expandString(file_path))
+
+        pixmap = QtGui.QPixmap(self.image)
+        print(self.image)
+        self.lbl.setPixmap(pixmap.scaled(self.lbl.size()))
+        
+    def mousePressEvent(self, event):
+        x = event.x() - self.scrollArea.x()
+        y = event.y() - self.scrollArea.y()
+        x = x / float(self.lbl.size().width())
+        y = y / float(self.lbl.size().height())
+        print("mouse Click event", x, y)
+        
+        
+        size = self.image.size()
+        print(size)
+        pix_value = self.image.pixelColor(math.floor(size.width() * x),math.floor(size.height() * y))
+        print("value : " ,pix_value.red())
+        clr = QtGui.QColor(
+            math.pow(pix_value.red()/255.0,2.2)*255,
+            math.pow(pix_value.green()/255.0,2.2)*255,
+            math.pow(pix_value.blue()/255.0,2.2)*255,
+            1.0)
+
+        clr_no_gamma = QtGui.QColor(
+            pix_value.red(),
+            pix_value.green(),
+            pix_value.blue()
+        )
+        self.color_field.setColor(clr)
+        
+    def resizeEvent(self, event) :
+        pixmap = QtGui.QPixmap(self.image)
+        self.lbl.resize(self.scrollArea.size())
+        self.lbl.setPixmap(pixmap.scaled(self.scrollArea.size() ))
+        
+
+
+colorPicker = MyColorPicker()
+colorPicker.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
+
+colorPicker.show()]]></script>
+  </tool>
+
+  <tool name="gui2one_install_local_hdas" label="Install local HDAs" icon="hicon:/SVGIcons.index?BUTTONS_node_palette.svg">
+    <script scriptType="python"><![CDATA[import os
+from glob import glob
+root_path = hou.expandString('$HIP')
+
+
+hdas_path = os.path.join(root_path, "hda")
+if os.path.exists(hdas_path) :
+    print("found hda folder.")
+    files = glob(hdas_path+"/*")
+    for f in files :
+        if os.path.isfile(f) :
+            name, ext = os.path.splitext(f)
+
+            if ext == '.hda' or ext == '.hdalc':
+                hou.hda.installFile(f)
+                print(f)
+
+
+    pass
+else : 
+    print("no 'hda' folder in root directory")]]></script>
+  </tool>
+
+  <tool name="cache_mesh" label="Cache Mesh" icon="hicon:/SVGIcons.index?SOP_spraypaint.svg">
+    <toolMenuContext name="network">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[import sys
+import hou
+
+def convertToCurlyBrackets(string) :
+    return string.replace('[','{').replace(']','}')
+
+sel = hou.selectedNodes()
+
+if len(sel) == 0 :
+    hou.ui.displayMessage("select a sop node with geometry inside")
+    sys.exit(1)
+node = sel[0]
+
+
+prims_nverts = []
+points = []
+indices = []
+for pt in node.geometry().points() :
+
+    pos = pt.position()
+    values = []
+    values.append(pos.x())
+    values.append(pos.y())
+    values.append(pos.z())
+    points.append(values)
+
+for prim in node.geometry().prims():
+
+    prims_nverts.append(len(prim.vertices()))
+
+    for vtx in prim.vertices() :
+        pt_num = vtx.point().number()
+        indices.append(pt_num)
+
+root = node.parent()
+wrangle_node = root.createNode("attribwrangle")
+wrangle_node.setPosition(hou.Vector2(node.position().x()+2, node.position().y()))
+wrangle_node.parm('class').set(0)
+
+script = "// script produced by cache_mesh python tool\n"
+script += "int nverts_list[] = %s;\n"%(convertToCurlyBrackets(str(prims_nverts)))
+script += "int indices[] = %s;\n"%(convertToCurlyBrackets(str(indices)))
+script += "vector points[] = %s;\n"%(convertToCurlyBrackets(str(points)))
+
+script += '''int inc = 0;
+int new_pts[];
+foreach(vector pos; points){
+    int pt = addpoint(0, pos);
+    append(new_pts, pt);
+}
+foreach(int nverts; nverts_list){
+    int poly = addprim(0, "poly");
+    for(int i=0; i<nverts; i++){
+        int cur_point_index = indices[inc];
+        addvertex(0, poly, new_pts[cur_point_index]);
+        inc++;
+    }
+}'''
+wrangle_node.parm('snippet').set(script)
+
+
+### add label param
+group = wrangle_node.parmTemplateGroup()
+label = hou.LabelParmTemplate("info_label", " ", ("The Vex Snippet parm was hidden because it slows down UI a lot with big mesh data",))
+folder = group.findFolder("Code")
+group.insertBefore(folder, label)
+
+## hide snippet parm
+group.hide('snippet', True)
+wrangle_node.setParmTemplateGroup(group)
+
+
+
+
+]]></script>
+  </tool>
+
+  <tool name="find_string_param_value" label="Find String Param Value" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+
+
+inc = 0
+paramsCounter = 0
+nuggetsFound = []
+
+r = hou.ui.readInput("string value to search :")
+#r = (0,"OUT_oriented_tree_wires")
+searchTarget = r[1]
+
+
+if searchTarget != '' :
+    rDomain = hou.ui.selectNode()
+
+    print rDomain
+    try :
+        test = hou.node(rDomain).allSubChildren()
+    except:
+        print "problem"
+        #sys.exit(0)
+        
+    for nd in hou.node(rDomain).allSubChildren() :
+        for parm in nd.parms():
+            paramsCounter += 1
+            try:
+                strParam = str(nd.evalParm(parm.path()))
+                #print strParam
+            except:
+                #print "problem !!!!"
+                strParam = ""
+            if strParam.find(searchTarget)!= -1 :
+                nuggetsFound.append(nd)
+        inc+= 1
+        
+print ("%s nodes, %s paramters, %s nugget found" % (inc,paramsCounter,len(nuggetsFound)))
+for nd in nuggetsFound :
+    print (nd.path())
+
+    
+
+]]></script>
+  </tool>
+
+  <tool name="object_in_bundles" label="Object in Bundles" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sys
+sel = hou.selectedNodes()
+all_bundles = hou.nodeBundles()
+no_bundle = True
+
+if len(sel) == 0 :
+    hou.ui.displayMessage("Select at least a node")
+    sys.exit(0)
+    
+print("------------------------")
+# clear bundle selection in bundles window
+for bundle in all_bundles :
+    bundle.setSelected(False)
+
+for bundle in all_bundles :
+    for node in sel:
+        if bundle.containsNode(node) and bundle.pattern() == None:
+            print("present in Bundle : %s" % (bundle.name()))
+            bundle.setSelected(True)
+            no_bundle = False
+if no_bundle :
+    print("Not found in any bundle ...")]]></script>
+  </tool>
+</shelfDocument>

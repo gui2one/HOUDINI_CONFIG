@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <toolshelf name="gui2one_2" label="gui2one 2.0">
+    <memberTool name="multi_curve_edit"/>
+    <memberTool name="copy_materials"/>
+    <memberTool name="convert_to_octane_material"/>
+    <memberTool name="place_highlight"/>
+    <memberTool name="color_converter"/>
+    <memberTool name="gui2one_color_picker"/>
+    <memberTool name="gui2one_install_local_hdas"/>
+    <memberTool name="cache_mesh"/>
+    <memberTool name="find_string_param_value"/>
+    <memberTool name="object_in_bundles"/>
+  </toolshelf>
+</shelfDocument>
