@@ -609,6 +609,20 @@ scene_viewer.setCurrentState("scrub")
     <toolSubmenu>gui2one 2.0</toolSubmenu>
     <script scriptType="python"><![CDATA[import sys
 sel = hou.selectedNodes()
+def findLastInput(node) :
+
+    if node == None: return None
+    
+    cur = node
+    
+    while len(cur.inputs()) != 0:
+        
+        cur = cur.inputs()[0]
+        print("find last child ", cur)
+    if cur != node:
+        return cur
+    else :
+        return None
 
 if len(sel) == 1 :
     if sel[0].type().name() == 'edit' :
@@ -620,7 +634,17 @@ if len(sel) == 1 :
 #        print(parent_type)
         
         if parent_type == 'merge' :
-            curve_nodes =  parent_node.inputs()
+            curve_nodes =  [] #parent_node.inputs()
+            for input in parent_node.inputs():
+                # bail early if input is a curve sop
+                if input.type().name() == "curve" :
+                    curve_nodes.append(input)
+                    continue
+                    
+                lastInput = findLastInput(input)
+                if lastInput != None:
+                    curve_nodes.append(lastInput)
+                
         elif parent_type == 'curve' :
             curve_nodes = [parent_node]
              
