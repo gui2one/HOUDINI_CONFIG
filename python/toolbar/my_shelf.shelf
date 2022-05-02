@@ -29,6 +29,7 @@
     <memberToolshelf name="volume_tools_dynamics"/>
     <memberToolshelf name="labs_toolset"/>
     <memberToolshelf name="Redshift"/>
+    <memberToolshelf name="leuleu_dev"/>
   </shelfSet>
 
   <toolshelf name="gui2one_2" label="gui2one 2.0">
