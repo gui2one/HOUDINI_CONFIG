@@ -66,7 +66,7 @@ fileName = hou.ui.selectFile( start_directory = dirPath,
         multiple_select = False,
         image_chooser   = False)
         
-print fileName
+print( fileName)
 
 data = {}
 compInfos = {}
@@ -128,6 +128,6 @@ with open(fileName,'w') as f:
     #json.dump(data,f, sort_keys=True, indent=4, separators=(',', ': '))
     json.dump(data, f)
 
-print 'just written a file at : ', fileName
+print( 'just written a file at : ', fileName)
 
 
