@@ -17,5 +17,6 @@
     <memberTool name="find_string_param_value"/>
     <memberTool name="object_in_bundles"/>
     <memberTool name="key_tool_1"/>
+    <memberTool name="gui2one__reload_cop_files"/>
   </toolshelf>
 </shelfDocument>
