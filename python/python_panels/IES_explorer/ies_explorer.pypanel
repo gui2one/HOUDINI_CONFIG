@@ -5,10 +5,12 @@
  used by the application.  Note, that two definitions of the
  same interface or of the interfaces menu are not allowed
  in a single file. -->
-  <interface name="ies_explorer" label="IES Explorer" icon="MISC_python" showNetworkNavigationBar="true" help_url="">
+  <interface name="ies_explorer" label="IES Explorer" icon="MISC_python" showNetworkNavigationBar="false" help_url="">
     <script><![CDATA[import os
 import glob
 from dataclasses import dataclass
+
+import toolutils
 
 from PySide2.QtWidgets import *
 from PySide2.QtCore import *
@@ -29,6 +31,10 @@ class IESItemWidget(QWidget):
     def initUI(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(0,0,0,0)
+        
+        name = os.path.basename(self.item.ies_file)
+        self.label = QLabel(f"{name}")
+        layout.addWidget(self.label)
         pixmap = QPixmap(self.item.image_file)
         self.btn = QPushButton()
         self.btn.setMinimumWidth(100)
