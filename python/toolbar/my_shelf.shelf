@@ -1792,10 +1792,10 @@ selStr = selection.selectionStrings()
 
 curveNodes = []
 if selStr.__len__() == 0:
-    print "no selection"
+    print("no selection")
 else:    
-    #print "-----------------------"
-    #print "selection :", selection
+    #print ("-----------------------")
+    #print ("selection :", selection)
     nodes = selection.nodes()
     curSop = nodes[0]
     
@@ -1804,7 +1804,7 @@ else:
     if selection.geometryType() == hou.geometryType.Edges:    
         segs = selStr[0].split(' ')   
         for seg in segs:
-            #print "Seg :",seg
+            #print("Seg :",seg)
             curveNode = curSop.parent().createNode("curve")
             curveStr = ''
             pts = str(seg)[1:].split('-')
