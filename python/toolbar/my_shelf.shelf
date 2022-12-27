@@ -30,6 +30,7 @@
     <memberToolshelf name="labs_toolset"/>
     <memberToolshelf name="Redshift"/>
     <memberToolshelf name="leuleu_dev"/>
+    <memberToolshelf name="gui2one_3.0"/>
   </shelfSet>
 
   <toolshelf name="gui2one_2" label="gui2one 2.0">

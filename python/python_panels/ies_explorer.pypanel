@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pythonPanelDocument>
+  <!-- This file contains definitions of Python interfaces and the
+ interfaces menu.  It should not be hand-edited when it is being
+ used by the application.  Note, that two definitions of the
+ same interface or of the interfaces menu are not allowed
+ in a single file. -->
+  <interface name="ies_explorer" label="IES Explorer" icon="MISC_python" showNetworkNavigationBar="false" help_url="">
+    <script><![CDATA[import os
+import glob
+from dataclasses import dataclass
+
+import toolutils
+
+from PySide2.QtWidgets import *
+from PySide2.QtCore import *
+from PySide2.QtGui import *
+
+@dataclass
+class IESItem:
+    ies_file : str
+    image_file : str
+    
+class IESItemWidget(QWidget):
+    item : IESItem
+    def __init__(self, ies_item : IESItem, parent=None):
+        super(IESItemWidget, self).__init__(parent)
+        self.item = ies_item
+        self.initUI()
+        
+    def initUI(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0,0,0,0)
+        
+        name = os.path.basename(self.item.ies_file)
+        self.label = QLabel(f"{name}")
+        layout.addWidget(self.label)
+        pixmap = QPixmap(self.item.image_file)
+        self.btn = QPushButton()
+        self.btn.setMinimumWidth(100)
+        self.btn.setMinimumHeight(100)
+        self.btn.setIcon(pixmap)
+        self.btn.setIconSize(self.btn.size() * 0.9)        
+        layout.addWidget(self.btn)
+        self.setLayout(layout)
+        
+class Grid(QWidget) :
+    
+    items : list[IESItem]
+    
+    def __init__(self, ies_paths, parent = None):
+        super(Grid, self).__init__(parent)
+        self.ies_paths = ies_paths
+        
+        self.collectItems()
+        self.initUI()
+
+    def collectItems(self):
+        self.items = []
+        for path in self.ies_paths :
+            dirname = os.path.dirname(path)
+            image_path = os.path.join(dirname,"asset_100.png" )
+            item = IESItem(path, image_path)
+            self.items.append(item)
+            
+    def initUI(self):
+        layout = QGridLayout()
+        
+        self.setLayout(layout)
+        
+        col = 0
+        row = 0
+        inc = 0
+        for item in self.items :
+
+#            pixmap = QPixmap(item.image_file)
+#            btn = QPushButton()
+#            btn.setMinimumWidth(100)
+#            btn.setMinimumHeight(100)
+#            btn.setIcon(pixmap)
+#            btn.setIconSize(btn.size() * 0.9)
+            w = IESItemWidget(item)
+            layout.addWidget(w,row, col)
+            
+            if col < 4 :
+                col += 1
+            else :
+                col = 0
+                row += 1
+            inc += 1
+
+    def resizeEvent(self, e):
+        # print(self.width())
+        pass
+
+def onCreateInterface():
+
+    files = glob.glob("D:\\3D\\houdini_19_payground\\maps\\IES\\**\\*.ies*", recursive=True)
+    for f in files :
+        dirname = os.path.dirname(f)
+        image_path = os.path.join(dirname,"asset_100.png" )
+
+    grid = Grid(files)
+    widget = QLabel('Hello World!')
+    return grid
+]]></script>
+    <includeInPaneTabMenu menu_position="0" create_separator="false"/>
+    <includeInToolbarMenu menu_position="104" create_separator="false"/>
+    <help><![CDATA[]]></help>
+  </interface>
+</pythonPanelDocument>
