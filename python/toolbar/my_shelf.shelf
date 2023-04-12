@@ -1134,10 +1134,10 @@ else :
     for node in hou.node('/').allSubChildren():
         if node.type().name() == assetTypeName:
             if node.isEditable() :
-                print node.isEditable() ,'--->', node.path()
+                print(node.isEditable() ,'--->', node.path())
                 foundNum += 1
     if foundNum == 0 :
-        print "no opened definition found for asset type ",assetTypeName]]></script>
+        print("no opened definition found for asset type ",assetTypeName)]]></script>
   </tool>
 
   <tool name="read_AE_data" label="Read AE Data" icon="PLASMA_App">
