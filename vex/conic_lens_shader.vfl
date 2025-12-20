@@ -1,0 +1,19 @@
+cvex ConicLens (
+    // Inputs
+    int ix = 0;
+    int iy = 0;
+    
+    int xres = 0;
+    int yres = 0;
+    // Outputs
+    export vector P = 0;
+    export vector I = 0;
+
+    // Shader arguments
+    float zoom = 1;
+    float focus = 1;
+) {
+
+    P = set(1.0-((float)ix/ (float)xres), (float)iy/ (float)yres, 0.0);
+    I = set(0,0,1);
+}
